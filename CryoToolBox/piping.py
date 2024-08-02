@@ -950,7 +950,7 @@ def K_piping(m_dot, fluid, piping):
 
     Parameters
     ----------
-    piping : List[PipingElement]
+    piping : List[PipingElement] or PipingElement
     Returns
     -------
     tuple
@@ -958,6 +958,9 @@ def K_piping(m_dot, fluid, piping):
         A0 : area of the first element, basis for conversion
     """
     K0 = 0*ureg.dimensionless
+    if not isinstance(piping, list)
+        piping = [piping]
+    
     try:
         A0 = piping[0].area  # using area of the first element as base
     except IndexError:
