@@ -142,62 +142,6 @@ def dP_Pipe(m_dot, fluid, pipe):
     
     return dP.to(ureg.pascal), h_T, h_Q
 
-def ht_def(pipe):
-    """Determine the heated status of the piping component
-    """
-    ###heat flux defined on the wall of the pipe
-    if hasattr(pipe, 'Q_def') and pipe.Q_def != None :
-        try: 
-            pipe.Q_def.m_as(ureg.W / ureg.m ** 2)
-        except:
-            raise ValueError(f"the Q_def is not properly defined in component {pipe}" )
-        pipe.ht_status = 1
-        
-    ###Temperature defined on the wall of the pipe
-    elif hasattr(pipe, 'Tw_def') and pipe.Tw_def != None :
-        try: 
-            pipe.Tw_def.m_as(ureg.K)
-        except:
-            raise ValueError(f"the Tw_def is not properly defined in component {pipe}" )
-        pipe.ht_status = 2
-        
-    ###Heat transfer defined on the wall of the pipe
-    elif hasattr(pipe, 'h_ext') and pipe.h_ext != None :
-        try: 
-            pipe.h_ext.m_as(ureg.W / ureg.m ** 2 / ureg.K)
-        except:
-            raise ValueError(f"the h_ext is not properly defined in component {pipe}" )
-        try:
-            pipe.T_ext.m_as(ureg.K)
-        except:
-            pipe.T_ext = 293 * ureg.K
-        pipe.ht_status = 3
-        
-    ###Ambiant/external temperature defined 
-    elif hasattr(pipe, 'T_ext') and pipe.T_ext != None :
-        try: 
-            pipe.T_ext.m_as(ureg.K)
-        except:
-            raise ValueError(f"the T_ext is not properly defined in component {pipe}" )
-        try:
-            pipe.safety_fact 
-        except:
-            pipe.safety_fact = 1
-        pipe.ht_status = 3
-        
-    ###Isolation on the external of the pipe 
-    elif hasattr(pipe, 'isolation') and pipe.isolation != None :
-        try: 
-            pipe.isolation.k.m_as(ureg.W / ureg.m / ureg.K)
-            pipe.isolation.OD.m_as(ureg.m)
-        except:
-            raise ValueError(f"the isolation (k, OD) is not properly defined in component {pipe}" )
-        pipe.ht_status = 4
-        
-    ###Other
-    else: 
-        pipe.ht_status = 0
-
 def pipe_Q_def(fluid, pipe, m_dot, dP, h_Q):
     """Calculate the inlet and outlet average temperature of the wall of the component.
 
@@ -207,6 +151,7 @@ def pipe_Q_def(fluid, pipe, m_dot, dP, h_Q):
     dH = (pipe.Q_def * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14) / m_dot
     fluid_temp.update('P', fluid.P - dP,'Hmass', fluid.Hmass + dH.to(ureg.J/ureg.kg))
     T_avg = (fluid.T + fluid_temp.T)/2
+    print('Hello')
     
     ### internal wall temperature
     Tw_i = T_avg + pipe.Q_def/h_Q
@@ -384,33 +329,69 @@ def pipe_insulated(fluid, pipe, m_dot, dP, h_T):
     return Tw_i, Tw_o, Q
 
 def pipe_heat(pipe, fluid, m_dot):
-    # try:
-    #     pipe.ht_status
-    # except:
-    ht_def(pipe)
+    """Determine the heated status of the piping component
+    """
 
     ### Calculate pressure drop and heat transfer coefficient
     dP, h_T, h_Q = dP_Pipe(m_dot, fluid, pipe)  
     
-    ### fix heat flux on the wall
-    if pipe.ht_status == 1:
+    ###heat flux defined on the wall of the pipe
+    if hasattr(pipe, 'Q_def') and pipe.Q_def != None :
+        try: 
+            pipe.Q_def.m_as(ureg.W / ureg.m ** 2)
+        except:
+            raise ValueError(f"the Q_def is not properly defined in component {pipe}" )
         Tw_i, Tw_o = pipe_Q_def(fluid, pipe, m_dot, dP, h_Q)
         Q = pipe.Q_def
         
-    elif pipe.ht_status == 2:
+    ###Temperature defined on the wall of the pipe
+    elif hasattr(pipe, 'Tw_def') and pipe.Tw_def != None :
+        try: 
+            pipe.Tw_def.m_as(ureg.K)
+        except:
+            raise ValueError(f"the Tw_def is not properly defined in component {pipe}" )
         Tw_i, Tw_o, Q = pipe_Tw_def(fluid, pipe, m_dot, dP, h_Q)
         
-    elif pipe.ht_status == 3:
+    ###Heat transfer defined on the wall of the pipe
+    elif hasattr(pipe, 'h_ext') and pipe.h_ext != None :
+        try: 
+            pipe.h_ext.m_as(ureg.W / ureg.m ** 2 / ureg.K)
+        except:
+            raise ValueError(f"the h_ext is not properly defined in component {pipe}" )
+        try:
+            pipe.T_ext.m_as(ureg.K)
+        except:
+            pipe.T_ext = 293 * ureg.K
         Tw_i, Tw_o, Q = pipe_h_ext(fluid, pipe, m_dot, dP, h_T)
         
-    elif pipe.ht_status == 4:
+    ###Ambiant/external temperature defined 
+    elif hasattr(pipe, 'T_ext') and pipe.T_ext != None :
+        try: 
+            pipe.T_ext.m_as(ureg.K)
+        except:
+            raise ValueError(f"the T_ext is not properly defined in component {pipe}" )
+        try:
+            pipe.safety_fact 
+        except:
+            pipe.safety_fact = 1
+        Tw_i, Tw_o, Q = pipe_h_ext(fluid, pipe, m_dot, dP, h_T)
+        
+    ###Isolation on the external of the pipe 
+    elif hasattr(pipe, 'isolation') and pipe.isolation != None :
+        try: 
+            pipe.isolation.k.m_as(ureg.W / ureg.m / ureg.K)
+            pipe.isolation.OD.m_as(ureg.m)
+        except:
+            raise ValueError(f"the isolation (k, OD) is not properly defined in component {pipe}" )
         Tw_i, Tw_o, Q = pipe_insulated(fluid, pipe, m_dot, dP, h_T)
-                
-    else :
+        
+    ###Other
+    else: 
         pipe.Q_def = Q = 0 * ureg.W/ ureg.m ** 2
         Tw_i, Tw_o = pipe_Q_def(fluid, pipe, m_dot, dP, h_Q)
-
+    
     return Tw_i.to(ureg.K), Tw_o.to(ureg.K), dP.to(ureg.bar), Q.to(ureg.W/ ureg.m ** 2)
+        
 
 def k_pipe(pipe, T_wall, T_ext = 293 * ureg.K):    ### you should add the possibility to define a table of values to do that
     try:

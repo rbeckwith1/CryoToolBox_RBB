@@ -957,7 +957,13 @@ def K_piping(m_dot, fluid, piping):
         K0 : converted resistance coefficient of the piping
         A0 : area of the first element, basis for conversion
     """
+
     K0 = 0*ureg.dimensionless
+
+#if not isinstance(piping, list) *Rosalyn: fixes the error with entering a piping value as something other than a list 
+    #piping = [piping]
+
+    
     try:
         A0 = piping[0].area  # using area of the first element as base
     except IndexError:
