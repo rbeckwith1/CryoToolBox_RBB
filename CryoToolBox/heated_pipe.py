@@ -625,7 +625,7 @@ def pipe_heat(pipe, fluid, m_dot):
     
     
         ### Heat transfer or ambient/external temperature defined on the wall of the pipe -NEW^^
-    elif (hasattr(pipe, 'h_ext') and pipe.h_ext is not None) or (hasattr(pipe, 'h_type') and pipe.h_type is not None):
+    elif (hasattr(pipe, 'h_ext') and pipe.h_ext is not None): #or (hasattr(pipe, 'h_type') and pipe.h_type is not None):
         if hasattr(pipe, 'h_ext') and pipe.h_ext is not None:
             try:
                 pipe.h_ext.m_as(ureg.W / ureg.m ** 2 / ureg.K)
@@ -637,11 +637,11 @@ def pipe_heat(pipe, fluid, m_dot):
             except:
                 pipe.T_ext = 293 * ureg.K
     
-        if hasattr(pipe, 'h_type') and pipe.h_type is not None:
-            try:
-                pipe.safety_fact
-            except:
-                pipe.safety_fact = 1
+        # if hasattr(pipe, 'h_type') and pipe.h_type is not None:
+        #     try:
+        #         pipe.safety_fact
+        #     except:
+        #         pipe.safety_fact = 1
     
         Tw_i, Tw_o, Q = pipe_h_ext(fluid, pipe, m_dot, dP, h_T)  
 
