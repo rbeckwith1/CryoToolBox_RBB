@@ -143,103 +143,77 @@ def dP_Pipe(m_dot, fluid, pipe):
     
     return dP.to(ureg.pascal), h_T, h_Q
 
-#   ### external wall temperature 
-# def find_Tw_o_Q_def(x, T_avg, pipe, Tw_i, m_dot, dH):
-#         k = k_pipe(pipe, Tw_i, x * ureg.K)
-#         dT = (x - Tw_i.m_as(ureg.K)) * ureg.K
-#         dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, dT)
-#         return dH*m_dot - dQ
-        
+#Find the inside or outside wall temperature
+def find_Tw(x, T_avg, pipe, h_coeff, m_dot):
+  
+    """Calculate the inlet and outlet average temperature of the wall of the component.
     
-#   ### external wall temperature 
-# def find_Tw_o_Q_def(x, T_avg, pipe, Tw_i, m_dot, dH):
-#         k = k_pipe(pipe, Tw_i, x * ureg.K)
-#         dT = (x - Tw_i.m_as(ureg.K)) * ureg.K
-#         dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, dT)
-#         return dH*m_dot - dQ 
-              
-# def find_Tw_i(x, T_avg, pipe, h_T, Tw_o):
-#     k = k_pipe(pipe, Tw_o, x * ureg.K)
-#     dQ = (conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, x * ureg.K - Tw_o)).m_as(ureg.watt)
-#     dH = (h_T * (T_avg - x * ureg.K) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
-#     return (dH ** 2 - dQ ** 2)
-
-# def find_Tw_o_h_ext(x, T_avg, pipe, h_T, fluid_external):
-
-#     h_ext = h_ext_(fluid_external, pipe, x * ureg.K)
+    Parameters
+    ----------
+    fluid : ThermState
+        Inlet fluid conditions
+    fluid_external : Thermstate
+        External fluid conditions
+    pipe : Pipe
+        Defining the pipe characteristics      
+    dH : Quantity {length: 2, time: -2}
+        specific enthalpy of fluid
+    k : Quantity {length: 1, mass: 1, temperature: -1, time: -3}
+        material thermal conductivity
+    dT : Quantity {temperature: 1}
+        temperature difference
+    Tw_i: Quantity {temperature: 1}
+        inside temperature of wall  
+    Tw_o: Quantity {temperature: 1}
+        outside temperature of wall         
+    Tw_other: Quantity {temperature: 1}
+        temperature of the "other" wall not in the function - EXPLAIN THIS BETTER
+    dQ : Quantity {length: 2, mass: 1, time: -3}
+        heat flow rate
+    m_dot : Quantity { mass: 1, time: -1}
+            mass flow rate
+    Q_def : Quantity {mass: 1, time: -3}
+            Heat load reaching the fluid
+    h_coeff: Quantity : {mass : 1, temperature : -1, time : -3}
+            heat transfer coefficient: chosed to be either h_T or h_Q
+    Returns
+    -------
+    (dH - dQ) ** 2 : Equation
+            Quadratic Expression that computes wall temperature when the minimum is solved
+    """
     
-#     #Calculate Tw_i
-#     Tw_i = ( h_ext * pipe.OD * (pipe.T_ext - x * ureg.K) / h_T / pipe.ID  ) + T_avg 
-#     Tw_i = max(min(Tw_i, pipe.T_ext), T_avg)
+    if pipe.Q_def != None:
+        #For a system with defined heat load: pipe_Q_def
+        Tw_i = T_avg + pipe.Q_def/h_coeff
+        Tw_other = Tw_i
         
-#     k = k_pipe(pipe, Tw_i, x * ureg.K)
-#     dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (x * ureg.K - Tw_i)).m_as(ureg.watt)
-
-#     dH = - (h_T * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
-#     return ((dH **2) - (dQ ** 2))**2
-
-# def find_Tw_o_insulated(x, T_avg, pipe, h_T):
-    
-#     #Calculate Tw_i
-#     Tw_i = ( pipe.isolation.k * (pipe.isolation.T_ext - x * ureg.K) / h_T / pipe.ID / log(pipe.isolation.OD/pipe.OD) ) + T_avg
-#     Tw_i = max(min(Tw_i, pipe.isolation.T_ext), T_avg)
-
-#     k = k_pipe(pipe, Tw_i, x * ureg.K)
-#     dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (x * ureg.K - Tw_i))
-#     dH = - h_T * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14
-#     return (dH - dQ)**2
-
-
-def find_Tw_o(x, T_avg, pipe, h_T, Tw_i, m_dot, dH, fluid_external):
-    if Tw_i is not None:
-        # Equivalent to find_Tw_o for pipe_Q_def
-        print(' ')
-        print(Tw_i)
-        print(' ')
+    elif pipe.Tw_def != None:
+        #For a system with defined external temperature: pipe_Tw_def
+        Tw_other = pipe.Tw_def
         
-        k = k_pipe(pipe, Tw_i, x * ureg.K)
-        dT = (x - Tw_i.m_as(ureg.K)) * ureg.K
-        dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, dT)
-        return dH * m_dot - dQ
-
-    elif h_T != None and fluid_external != None:
-        # Equivalent to find_Tw_o for pipe_h_ext
-        h_ext = h_ext_(fluid_external, pipe, x * ureg.K)
+    elif pipe.T_ext != None:
+        #For a system with defined external fluid or external heat transfer coeff: pipe_h_ext
+        fluid_external = ThermState('air', T= pipe.T_ext, P=1 * ureg.bar) #to do: improve structure 
+        h_ext = h_ext_(fluid_external, pipe, x * ureg.K)     
         
-        # print(' ')
-        # print(T_avg)
-        # print(' ')
-        # print(h_ext * pipe.OD * (pipe.T_ext - x * ureg.K) / h_T / pipe.ID)
-        
-        Tw_i = (h_ext * pipe.OD * (pipe.T_ext - x * ureg.K) / h_T / pipe.ID) + T_avg
+        Tw_i = (h_ext * pipe.OD * (pipe.T_ext - x * ureg.K) / h_coeff / pipe.ID) + T_avg
         Tw_i = max(min(Tw_i, pipe.T_ext), T_avg)
+        Tw_other = Tw_i
         
-        k = k_pipe(pipe, Tw_i, x * ureg.K)
-        dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (x * ureg.K - Tw_i)).m_as(ureg.watt)
-        dH = -(h_T * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
-        return ((dH ** 2) - (dQ ** 2)) ** 2
-
-    elif h_T != None:
-        # Equivalent to find_Tw_o for pipe_insulated
-    
-        Tw_i = (pipe.isolation.k * (pipe.isolation.T_ext - x * ureg.K) / h_T / pipe.ID / log(pipe.isolation.OD / pipe.OD)) + T_avg
+    elif  pipe.isolation.T_ext != None and pipe.isolation.k != None:
+        #For a defined insulated system: pipe_insulated
+        Tw_i = (pipe.isolation.k * (pipe.isolation.T_ext - x * ureg.K) / h_coeff / pipe.ID / log(pipe.isolation.OD / pipe.OD)) + T_avg
         Tw_i = max(min(Tw_i, pipe.isolation.T_ext), T_avg)
-
-        k = k_pipe(pipe, Tw_i, x * ureg.K)
-        dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (x * ureg.K - Tw_i))
-        dH = -h_T * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14
-        return (dH - dQ) ** 2
-
+        Tw_other = Tw_i
     else:
-        raise ValueError("Insufficient or invalid parameters provided.")
+        raise ValueError("Insufficient or invalid parameters provided.")                
+    
+    k = k_pipe(pipe, Tw_other, x * ureg.K)
+    dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (x * ureg.K - Tw_other))
+    dH = -h_coeff * (T_avg - Tw_other) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14
+    return (dH - dQ).m_as(ureg.W) ** 2  
+    
 
-###Calculate Tw_i               
-def find_Tw_i(x, T_avg, pipe, h_T, Tw_o):
-    k = k_pipe(pipe, Tw_o, x * ureg.K)
-    dQ = (conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, x * ureg.K - Tw_o)).m_as(ureg.watt)
-    dH = (h_T * (T_avg - x * ureg.K) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
-    return (dH ** 2 - dQ ** 2)
- 
 
 def pipe_Q_def(fluid, pipe, m_dot, dP, h_Q):
     
@@ -271,7 +245,6 @@ def pipe_Q_def(fluid, pipe, m_dot, dP, h_Q):
     Tw_i, Tw_o : Quantity {temperature: 1}
         Inside temperature of the wall, Outside temperature of the wall
     """
-    fluid_external, h_T = None,None
     
     #Calculate downstream conditions
     fluid_downstream = fluid.copy()
@@ -282,21 +255,20 @@ def pipe_Q_def(fluid, pipe, m_dot, dP, h_Q):
     T_avg = (fluid.T + fluid_downstream.T)/2
     
     ### internal wall temperature
-    Tw_i = T_avg + pipe.Q_def/h_Q
-    
+    # Tw_i = T_avg + pipe.Q_def/h_Q  
 
-    # ### external wall temperature 
-    # def find_Tw_o(x):
+    ### external wall temperature 
+    # def find_Tw_o_Q_def(x):
     #     k = k_pipe(pipe, Tw_i, x * ureg.K)
     #     dT = (x - Tw_i.m_as(ureg.K)) * ureg.K
     #     dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, dT)
-    #     return dH*m_dot - dQ
-                   
-    #Calculate Tw_o: minimum of the quadratic find_Tw_o
-    Tw_o = minimize(find_Tw_o, x0=Tw_i.m_as(ureg.K) + 1, args = (T_avg, pipe, Tw_i, m_dot, dH, h_T, fluid_external), bounds=[(1,3000)]).x[0] * ureg.K
+    #     return dH*m_dot - dQ     
+        
+    #Calculate Tw_i and Tw_o: minimum of the quadratic find_Tw_o
+    Tw_i = T_avg + pipe.Q_def/h_Q
+    Tw_o = minimize(find_Tw, x0=T_avg.m_as(ureg.K) + 1, args=(T_avg, pipe, h_Q, m_dot), bounds=[(1,3000)]).x[0] * ureg.K
     
     return Tw_i, Tw_o  
-
  
 
 # Define main functions
@@ -333,6 +305,7 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
     Q : Quantity { mass: 1, time: -3}
         Heat load reaching the fluid
     """
+    #### Initial conditions and parameters
     H = fluid.Hmass
     fluid_downstream = fluid.copy()
     T_avg = fluid.T
@@ -350,7 +323,6 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
         #     dH = (h_T * (T_avg - x * ureg.K) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
         #     return (dH ** 2 - dQ ** 2)
 
-        
         #Defines boundries for Tw_o
         if T_avg < Tw_o:
             bracket = [(T_avg.m_as(ureg.K), Tw_o.m_as(ureg.K))]   # Limits search range- 
@@ -358,7 +330,7 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
             bracket = [(Tw_o.m_as(ureg.K), T_avg.m_as(ureg.K))]
         
         #Calculate Tw_i: minimum of the quadratic find_Tw_i
-        Tw_i = minimize(find_Tw_i,  x0 = T_avg.m_as(ureg.K), args = (T_avg, pipe, h_T, Tw_o), bounds=bracket).x[0] *ureg.K
+        Tw_i = minimize(find_Tw,  x0 = T_avg.m_as(ureg.K), args = (T_avg, pipe, h_T, m_dot), bounds=bracket).x[0] *ureg.K
         
         #Update downstream fluid conditions
         dT = T_avg - Tw_i
@@ -384,14 +356,6 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
         #         raise Exception('the pipe is too long')
         #     j=j+1
         #     T_avg = (fluid.T + Tw_o) / 2
-            
-
-        ### Eliminate nonphysical solutions         
-        if (fluid.T < Tw_o and T_ds > Tw_o) or (fluid.T > Tw_o and T_ds < Tw_o):
-            if j > 0:
-                raise Exception('the pipe is too long')
-            j += 1
-            T_avg = (fluid.T + Tw_o) / 2
     
         Q = (- h_T * dT ).to(ureg.W/ureg.m ** 2)       
  
@@ -460,6 +424,7 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
      Q : Quantity { mass: 1, time: -3}
          Heat load reaching the fluid
     """
+    ### Initial conditions and parameters
     H = fluid.Hmass
     fluid_downstream = fluid.copy()
     T_avg = fluid.T
@@ -470,7 +435,7 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
         
         ##Define External Fluid
         fluid_external = ThermState('air', T= pipe.T_ext, P=1 * ureg.bar) 
-        print(h_T)              
+             
         # def find_Tw_o(x):
         
         #     h_ext = h_ext_(fluid_external, pipe, x * ureg.K)
@@ -495,8 +460,7 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
         #     # dH = - (h_T * dT2 * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
         #     dH = - (h_T * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
         #     return ((dH **2) - (dQ ** 2))**2     
- 
-        dH = None
+
         
         # Assign Range for Tw_o
         if T_avg < pipe.T_ext:   
@@ -505,13 +469,10 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
             bracket = [(pipe.T_ext.m_as(ureg.K)+0.0001, T_avg.m_as(ureg.K)-0.0001)]       
         
         #Calculate Tw_o: minimum of the quadratic find_Tw_o
-        Tw_o = minimize(find_Tw_o, x0=(fluid_external.T + T_avg) / 2, args = (T_avg, pipe, m_dot, h_T, Tw_i, dH, fluid_external), bounds=bracket).x[0] * ureg.K                                                  
-        print(Tw_o)
+        Tw_o = minimize(find_Tw, x0=(fluid_external.T + T_avg).m_as(ureg.K)/ 2, args = (T_avg, pipe, h_T, m_dot), bounds=bracket).x[0] * ureg.K                                                  
+        
         #Calculate flow parameters
         h_ext = h_ext_(fluid_external, pipe, Tw_o)
-        print('here')
-        print('h_T')
-        print(' ')
         Tw_i = ( h_ext * pipe.OD * (pipe.T_ext - Tw_o) / h_T / pipe.ID  ) + T_avg
         
         ###Calculate downstream flow conditions
@@ -524,18 +485,6 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
         T_avg_new = (fluid.T + T_ds)/2
         res = ((T_avg_new - T_avg)**2 / (T_ds - fluid.T)**2)
         T_avg = T_avg_new
-        
-        # ### Eliminate nonphysical solutions 
-        # if fluid.T < Tw_o and T_ds > Tw_o:
-        #     if j>0:
-        #         raise Exception('the pipe is too long')
-        #     j=j+1
-        #     T_avg = (fluid.T + Tw_o) / 2
-        # if fluid.T > Tw_o and T_ds < Tw_o:
-        #     if j>0:
-        #         raise Exception('the pipe is too long')
-        #     j=j+1
-        #     T_avg = (fluid.T + Tw_o) / 2
     
         ### Eliminate nonphysical solutions         
         if (fluid.T < Tw_o and T_ds > Tw_o) or (fluid.T > Tw_o and T_ds < Tw_o):
@@ -547,24 +496,6 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
         Q = (- h_T * dT ).to(ureg.W/ureg.m ** 2)
     
         return Tw_i, Tw_o, Q
-
-
-# def find_Tw_o_insulated(x, T_avg, pipe, h_T):
-#     Tw_i = ( pipe.isolation.k * (pipe.isolation.T_ext - x * ureg.K) / h_T / pipe.ID / log(pipe.isolation.OD/pipe.OD) ) + T_avg
-#     if Tw_i > pipe.isolation.T_ext:
-#         Tw_i = pipe.isolation.T_ext
-#     if Tw_i < T_avg:
-#         Tw_i = T_avg
-        
-#     # Tw_i = max(min(Tw_i, pipe.isolation.T_ext), T_avg)
-#     k = k_pipe(pipe, Tw_i, x * ureg.K)
-#     # dT1 = x * ureg.K - Tw_i
-#     # dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, dT1)
-#     dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (x * ureg.K - Tw_i))
-#     # dT2 = T_avg - Tw_i
-#     # dH = - h_T * dT2 * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14
-#     dH = - h_T * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14
-#     return (dH - dQ)**2
 
 def pipe_insulated(fluid, pipe, m_dot, dP, h_T): 
     """Calculate the inlet and outlet average temperature of the wall of the component,
@@ -602,6 +533,7 @@ def pipe_insulated(fluid, pipe, m_dot, dP, h_T):
      Q : Quantity { mass: 1, time: -3}
          Heat load reaching the fluid
     """
+    ###Initial conditions and parameters
     H = fluid.Hmass
     fluid_downstream = fluid.copy()
     T_avg = fluid.T
@@ -631,17 +563,14 @@ def pipe_insulated(fluid, pipe, m_dot, dP, h_T):
         # fact = min(1/2, fact)  # Use min for the upper limit      
         # Tw_o = minimize(find_Tw_o, x0=pipe.isolation.T_ext.m_as(ureg.K) - (pipe.isolation.T_ext.m_as(ureg.K) - T_avg.m_as(ureg.K)) * fact, bounds=[(T_avg.m_as(ureg.K), pipe.isolation.T_ext.m_as(ureg.K))]).x[0] * ureg.K
         # Assign Range for Tw_o
-       
-        Tw_i, dH, fluid_external = None, None, None
                
-        
         if T_avg < pipe.isolation.T_ext:  
             bracket = [(T_avg.m_as(ureg.K)+0.0001, pipe.isolation.T_ext.m_as(ureg.K)-0.0001)]  # Limits search range- 
         else:
             bracket = [(pipe.isolation.T_ext.m_as(ureg.K)+0.0001, T_avg.m_as(ureg.K)-0.0001)]
          
-        #Calculate Tw_o: minimum of the quadratic find_Tw_o
-        Tw_o = minimize(find_Tw_o, x0=pipe.isolation.T_ext.m_as(ureg.K) - (pipe.isolation.T_ext.m_as(ureg.K) - T_avg.m_as(ureg.K)), args = (T_avg, pipe, m_dot, h_T, Tw_i, dH, fluid_external), bounds=bracket).x[0] * ureg.K 
+        #Calculate Tw_o: minimum of the quadratic find_Tw_o and calculate Tw_i
+        Tw_o = minimize(find_Tw, x0=pipe.isolation.T_ext.m_as(ureg.K) - (pipe.isolation.T_ext.m_as(ureg.K) - T_avg.m_as(ureg.K)), args = (T_avg, pipe, h_T, m_dot), bounds=bracket).x[0] * ureg.K 
         Tw_i = (( pipe.isolation.k * (pipe.isolation.T_ext - Tw_o) / h_T / pipe.ID / log(pipe.isolation.OD/pipe.OD) ) + T_avg)
         
         ###Calculate downstream flow conditions
@@ -655,24 +584,7 @@ def pipe_insulated(fluid, pipe, m_dot, dP, h_T):
         res = ((T_avg_new - T_avg)**2 / (T_ds - fluid.T)**2)
         T_avg = T_avg_new
         
-        # ### Eliminate nonphysical solutions 
-        # if fluid.T < Tw_o and T_ds > Tw_o:
-        #     if j>0:
-        #         raise Exception('the pipe is too long')
-        #     j=j+1
-        #     T_avg = (fluid.T + Tw_o) / 2
-        # if fluid.T > Tw_o and T_ds < Tw_o:
-        #     if j>0:
-        #         raise Exception('the pipe is too long')
-        #     j=j+1
-        #     T_avg = (fluid.T + Tw_o) / 2
-        
-        # if (fluid.T < Tw_o and T_ds > Tw_o) or (fluid.T > Tw_o and T_ds < Tw_o):
-        #     if j > 0:
-        #         raise Exception('the pipe is too long')
-        #     j += 1
-        #     T_avg = (fluid.T + Tw_o) / 2
-        
+        ###Eliminate nonphysical solutions
         if (fluid.T < Tw_o and T_ds > Tw_o) or (fluid.T > Tw_o and T_ds < Tw_o):
             if j > 0:
                 raise Exception('the pipe is too long')
@@ -682,9 +594,6 @@ def pipe_insulated(fluid, pipe, m_dot, dP, h_T):
         Q = (- h_T * dT ).to(ureg.W/ureg.m ** 2)
 
         return Tw_i, Tw_o, Q
-
-
-
 
 
 def pipe_heat(pipe, fluid, m_dot):
@@ -772,30 +681,9 @@ def pipe_heat(pipe, fluid, m_dot):
     return Tw_i.to(ureg.K), Tw_o.to(ureg.K), dP.to(ureg.bar), Q.to(ureg.W/ ureg.m ** 2)
         
 
-# def k_pipe(pipe, T_wall, T_ext = 293 * ureg.K):    ### you should add the possibility to define a table of values to do that (for materials not in the database)
-
-#     try:
-#         k = pipe.k.m_as(ureg.W / ureg.K / ureg.m) * ureg.W / ureg.K / ureg.m
-#     except:
-#         try:
-#             mat = pipe.material
-#         except:
-#             if isinstance(pipe, CopperTube):
-#                 mat = Material.OFHC
-#             else:
-#                 mat = Material.SS304
-#         if T_wall < T_ext:
-#             k = nist_property(mat, Property.TC, T1 = T_wall, T2 = T_ext)
-#         else:
-#             k = nist_property(mat, Property.TC, T1 = T_ext, T2 = T_wall)
-#     return k.to(ureg.W / ureg.K / ureg.m)
-
-def k_pipe(pipe, T_wall, T_ext=293 * ureg.K):    
+def k_pipe(pipe, T_wall, T_ext=293 * ureg.K):     ### you should add the possibility to define a table of values to do that (for materials not in the database)
     try:
         # Check if the 'pipe' object has the attribute 'k'
-        print(' ')
-        print(T_wall)
-        print(' ')
         if hasattr(pipe, 'k'):
             k = pipe.k.m_as(ureg.W / ureg.K / ureg.m) * ureg.W / ureg.K / ureg.m
         else:
@@ -810,13 +698,15 @@ def k_pipe(pipe, T_wall, T_ext=293 * ureg.K):
                 mat = Material.OFHC
             else:
                 mat = Material.SS304
-        # Determine the thermal conductivity using the 'nist_property' function
-        if T_wall < T_ext:
-            k = nist_property(mat, Property.TC, T1=T_wall, T2=T_ext)
+       ### Determine the thermal conductivity using the 'nist_property' function
+        if np.abs((T_wall - T_ext).m_as(ureg.K)) < 0.001:
+            k = nist_property(mat, Property.TC, T1=T_wall)
         else:
-            k = nist_property(mat, Property.TC, T1=T_ext, T2=T_wall)
+            if T_wall < T_ext:
+                k = nist_property(mat, Property.TC, T1=T_wall, T2=T_ext)
+            else:
+                k = nist_property(mat, Property.TC, T1=T_ext, T2=T_wall)
     return k.to(ureg.W / ureg.K / ureg.m)
-
 
 def h_ext_(fluid, pipe, T_wall):  ### you should add the possibility to define a table of values to do that
     try:
@@ -852,48 +742,3 @@ def h_ext_(fluid, pipe, T_wall):  ### you should add the possibility to define a
         if type == 3: ###including Rad ice and h_ice specific in the problem to do 
             print('to do')
     return h.to(ureg.W / ureg.K / ureg.m ** 2)
-
-
-
-
-# def find_wall_temp(x, T_avg, pipe, h_T, Tw_i, m_dot, dH, fluid_external, Tw_o):
-#     if Tw_i != None and m_dot != None and dH != None:
-#         # Equivalent to find_Tw_o for pipe_Q_def
-
-#         k = k_pipe(pipe, Tw_i, x * ureg.K)
-#         dT = (x - Tw_i.m_as(ureg.K)) * ureg.K
-#         dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, dT)
-#         return dH * m_dot - dQ
-
-#     elif Tw_o != None:
-#         # Equivalent to find_Tw_i for pipe_Tw_def
-#         k = k_pipe(pipe, Tw_o, x * ureg.K)
-#         dQ = (conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, x * ureg.K - Tw_i)).m_as(ureg.watt)
-#         dH = (h_T * (T_avg - x * ureg.K) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
-#         return (dH ** 2 - dQ ** 2)
-
-#     elif h_T != None and fluid_external != None:
-#         # Equivalent to find_Tw_o for pipe_h_ext
-#         h_ext = h_ext_(fluid_external, pipe, x * ureg.K)
-        
-#         Tw_i = (h_ext * pipe.OD * (pipe.T_ext - x * ureg.K) / h_T / pipe.ID) + T_avg
-#         Tw_i = max(min(Tw_i, pipe.T_ext), T_avg)
-        
-#         k = k_pipe(pipe, Tw_i, x * ureg.K)
-#         dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (x * ureg.K - Tw_i)).m_as(ureg.watt)
-#         dH = -(h_T * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
-#         return ((dH ** 2) - (dQ ** 2)) ** 2
-
-#     elif h_T != None:
-#         # Equivalent to find_Tw_o for pipe_insulated
-    
-#         Tw_i = (pipe.isolation.k * (pipe.isolation.T_ext - x * ureg.K) / h_T / pipe.ID / log(pipe.isolation.OD / pipe.OD)) + T_avg
-#         Tw_i = max(min(Tw_i, pipe.isolation.T_ext), T_avg)
-
-#         k = k_pipe(pipe, Tw_i, x * ureg.K)
-#         dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (x * ureg.K - Tw_i))
-#         dH = -h_T * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14
-#         return (dH - dQ) ** 2
-
-#     else:
-#         raise ValueError("Insufficient or invalid parameters provided.")
