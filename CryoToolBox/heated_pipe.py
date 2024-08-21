@@ -344,7 +344,14 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
         
         ##Calculate updated average temperature
         T_avg = T_avg_new
-        
+
+        ### Eliminate nonphysical solutions         
+        if (fluid.T < Tw_o and T_ds > Tw_o) or (fluid.T > Tw_o and T_ds < Tw_o):
+            if j > 0:
+                raise Exception('the pipe is too long')
+            j += 1
+            T_avg = (fluid.T + Tw_o) / 2
+            
         ### Eliminate nonphysical solutions 
         # if fluid.T < Tw_o and T_ds > Tw_o:
         #     if j>0:
@@ -361,32 +368,6 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
  
         return Tw_i, Tw_o, Q
 
-
-
-# def find_Tw_o_h_ext(x, T_avg, pipe, h_T, fluid_external):
-
-#     h_ext = h_ext_(fluid_external, pipe, x * ureg.K)
-    
-#     #Assign reference temperature for Tw_i
-#     Tw_i = ( h_ext * pipe.OD * (pipe.T_ext - x * ureg.K) / h_T / pipe.ID  ) + T_avg 
-    
-#     #Adjust reference temperature for extreme cases
-#     if Tw_i > pipe.T_ext:
-#         Tw_i = pipe.T_ext
-#     if Tw_i < T_avg:
-#         Tw_i = T_avg
-        
-#     # Tw_i = max(min(T1, pipe.T_ext), T_avg)
-#     k = k_pipe(pipe, Tw_i, x * ureg.K)
-   
-#     # dT1 = x * ureg.K - Tw_i
-#     # dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, dT1).m_as(ureg.watt)
-#     dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (x * ureg.K - Tw_i)).m_as(ureg.watt)
-   
-#     # dT2 = T_avg - TTw_i
-#     # dH = - (h_T * dT2 * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
-#     dH = - (h_T * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
-#     return ((dH **2) - (dQ ** 2))**2    
 
 def pipe_h_ext(fluid, pipe, m_dot, dP, h_T): 
     """Calculate the inlet and outlet average temperature of the wall of the component,
