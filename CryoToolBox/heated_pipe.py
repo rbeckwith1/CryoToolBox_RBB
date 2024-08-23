@@ -322,7 +322,6 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
             k = k_pipe(pipe, Tw_o, x * ureg.K)
             dQ = (conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, x * ureg.K - Tw_o)).m_as(ureg.watt)
             dH = (h_T * (T_avg - x * ureg.K) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
-            # dH = (h_T * (T_avg - Tw_o) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
             print(' ')
             print(dQ)
             print(dH) 
