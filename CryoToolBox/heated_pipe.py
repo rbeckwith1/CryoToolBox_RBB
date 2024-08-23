@@ -113,7 +113,7 @@ def dP_Pipe(m_dot, fluid, pipe):
 
     # Check Flow conditions
     if Re_ < 0.001 or Re_ > 5e7: 
-        raise ValueError(f'Reynolds number (Re) must be > 0.001. The value is {Re_}')
+        raise ValueError(f'Reynolds number (Re) must be between 0.001 and 5E7. The value is {Re_}')
     if eps < 0 or eps > 0.05:
         raise ValueError(f'Relative roughness (eps) should be between 0 and 0.05. The value is {eps}')
 
@@ -137,7 +137,7 @@ def dP_Pipe(m_dot, fluid, pipe):
     #Pressure drop
     dP = dP_Darcy(f*L_ID, fluid.Dmass, w)    
     
-    #Heat transfer
+    #Heat transfer coefficients for temperature and heat flux constant systems
     h_T = heat_trans_coef(fluid, Nu_T, pipe.ID)
     h_Q = heat_trans_coef(fluid, Nu_Q, pipe.ID)
     
@@ -185,11 +185,12 @@ def find_Tw(x, T_avg, pipe, h_coeff, m_dot):
     if pipe.Q_def != None:
         #For a system with defined heat load: pipe_Q_def
         Tw_i = T_avg + pipe.Q_def/h_coeff
-        Tw_other = Tw_i
+        Tw_o =  x * ureg.K
         
     elif pipe.Tw_def != None:
         #For a system with defined external temperature: pipe_Tw_def
-        Tw_other = pipe.Tw_def
+        Tw_i = x * ureg.K
+        Tw_o = pipe.Tw_def
         
     elif pipe.T_ext != None:
         #For a system with defined external fluid or external heat transfer coeff: pipe_h_ext
@@ -198,19 +199,19 @@ def find_Tw(x, T_avg, pipe, h_coeff, m_dot):
         
         Tw_i = (h_ext * pipe.OD * (pipe.T_ext - x * ureg.K) / h_coeff / pipe.ID) + T_avg
         Tw_i = max(min(Tw_i, pipe.T_ext), T_avg)
-        Tw_other = Tw_i
+        Tw_o =  x * ureg.K
         
-    elif  pipe.isolation.T_ext != None and pipe.isolation.k != None:
+    elif pipe.isolation.k != None: #pipe.isolation.T_ext != None
         #For a defined insulated system: pipe_insulated
         Tw_i = (pipe.isolation.k * (pipe.isolation.T_ext - x * ureg.K) / h_coeff / pipe.ID / log(pipe.isolation.OD / pipe.OD)) + T_avg
         Tw_i = max(min(Tw_i, pipe.isolation.T_ext), T_avg)
-        Tw_other = Tw_i
+        Tw_o =  x * ureg.K
     else:
         raise ValueError("Insufficient or invalid parameters provided.")                
     
-    k = k_pipe(pipe, Tw_other, x * ureg.K)
-    dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (x * ureg.K - Tw_other))
-    dH = -h_coeff * (T_avg - Tw_other) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14
+    k = k_pipe(pipe, Tw_o, Tw_i)
+    dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (Tw_o - Tw_i))
+    dH = -h_coeff * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14  
     return (dH - dQ).m_as(ureg.W) ** 2  
     
 
@@ -316,24 +317,39 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
     
     while res>0.0001:  
         
-        # ###Calculate Tw_i               
-        # def find_Tw_i(x):
-        #     k = k_pipe(pipe, Tw_o, x * ureg.K)
-        #     dQ = (conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, x * ureg.K - Tw_o)).m_as(ureg.watt)
-        #     dH = (h_T * (T_avg - x * ureg.K) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
-        #     return (dH ** 2 - dQ ** 2)
+        ###Calculate Tw_i               
+        def find_Tw_i(x):
+            k = k_pipe(pipe, Tw_o, x * ureg.K)
+            dQ = (conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, x * ureg.K - Tw_o)).m_as(ureg.watt)
+            dH = (h_T * (T_avg - x * ureg.K) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
+            # dH = (h_T * (T_avg - Tw_o) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14).m_as(ureg.watt)
+            print(' ')
+            print(dQ)
+            print(dH) 
+            print(' ')
+            print(x)
+            return (dH**2 - dQ** 2)
 
         #Defines boundries for Tw_o
         if T_avg < Tw_o:
-            bracket = [(T_avg.m_as(ureg.K), Tw_o.m_as(ureg.K))]   # Limits search range- 
+            bracket = (T_avg.m_as(ureg.K), Tw_o.m_as(ureg.K)) # Limits search range- 
         else:
-            bracket = [(Tw_o.m_as(ureg.K), T_avg.m_as(ureg.K))]
-        
+            bracket = (Tw_o.m_as(ureg.K), T_avg.m_as(ureg.K))
+            
         #Calculate Tw_i: minimum of the quadratic find_Tw_i
-        Tw_i = minimize(find_Tw,  x0 = T_avg.m_as(ureg.K), args = (T_avg, pipe, h_T, m_dot), bounds=bracket).x[0] *ureg.K
+        # Tw_i = minimize(find_Tw_i,  x0 = T_avg.m_as(ureg.K), bounds=bracket).x[0] *ureg.K
+
+        Tw_i = minimize(find_Tw,  x0 = T_avg.m_as(ureg.K), args = (T_avg, pipe, h_T, m_dot), bounds=[bracket]).x[0] *ureg.K        
+
+        solution = root_scalar(find_Tw_i, x0 = T_avg.m_as(ureg.K), x1 = (Tw_o.m_as(ureg.K) + T_avg.m_as(ureg.K))/2, bracket=bracket)
+        Tw_i_root_scalar = solution.root * ureg.K
+        print(' ')
+        print('here')
+        print(Tw_i,Tw_i_root_scalar)
         
-        #Update downstream fluid conditions
+        # #Calculate downstream fluid conditions
         dT = T_avg - Tw_i
+
         dH = - h_T * dT * pipe.ID * pipe.L * 3.14 / m_dot
         fluid_downstream.update('P', fluid.P - dP,'Hmass', H + dH.to(ureg.J/ureg.kg))
         T_ds = fluid_downstream.T 
@@ -342,28 +358,22 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
         T_avg_new = (fluid.T + T_ds)/2
         res = ((T_avg_new - T_avg)**2 / (T_ds - fluid.T)**2)
         
-        ##Calculate updated average temperature
+        ##Update average temperature
         T_avg = T_avg_new
-
+        # dT = T_avg - Tw_i
+        
         ### Eliminate nonphysical solutions         
         if (fluid.T < Tw_o and T_ds > Tw_o) or (fluid.T > Tw_o and T_ds < Tw_o):
             if j > 0:
                 raise Exception('the pipe is too long')
             j += 1
             T_avg = (fluid.T + Tw_o) / 2
-            
-        ### Eliminate nonphysical solutions 
-        # if fluid.T < Tw_o and T_ds > Tw_o:
-        #     if j>0:
-        #         raise Exception('the pipe is too long')
-        #     j=j+1
-        #     T_avg = (fluid.T + Tw_o) / 2
-        # if fluid.T > Tw_o and T_ds < Tw_o:
-        #     if j>0:
-        #         raise Exception('the pipe is too long')
-        #     j=j+1
-        #     T_avg = (fluid.T + Tw_o) / 2
-    
+        
+        print(' ')
+        print(Tw_i)
+        print(h_T,dT)
+        print(' ')
+        ### Calculate heat flux 
         Q = (- h_T * dT ).to(ureg.W/ureg.m ** 2)       
  
         return Tw_i, Tw_o, Q
@@ -564,6 +574,7 @@ def pipe_insulated(fluid, pipe, m_dot, dP, h_T):
         T_avg_new = (fluid.T + T_ds)/2
         res = ((T_avg_new - T_avg)**2 / (T_ds - fluid.T)**2)
         T_avg = T_avg_new
+        # dT = T_avg - Tw_i
         
         ###Eliminate nonphysical solutions
         if (fluid.T < Tw_o and T_ds > Tw_o) or (fluid.T > Tw_o and T_ds < Tw_o):
@@ -571,7 +582,9 @@ def pipe_insulated(fluid, pipe, m_dot, dP, h_T):
                 raise Exception('the pipe is too long')
             j += 1
             T_avg = (fluid.T + Tw_o) / 2
-         
+        print(' ')
+        print(dT, h_T)
+        print(' ')
         Q = (- h_T * dT ).to(ureg.W/ureg.m ** 2)
 
         return Tw_i, Tw_o, Q
@@ -625,7 +638,7 @@ def pipe_heat(pipe, fluid, m_dot):
     
     
         ### Heat transfer or ambient/external temperature defined on the wall of the pipe -NEW^^
-    elif (hasattr(pipe, 'h_ext') and pipe.h_ext is not None): #or (hasattr(pipe, 'h_type') and pipe.h_type is not None):
+    elif (hasattr(pipe, 'h_ext') and pipe.h_ext is not None) or (hasattr(pipe, 'h_type') and pipe.h_type is not None):
         if hasattr(pipe, 'h_ext') and pipe.h_ext is not None:
             try:
                 pipe.h_ext.m_as(ureg.W / ureg.m ** 2 / ureg.K)
@@ -637,11 +650,11 @@ def pipe_heat(pipe, fluid, m_dot):
             except:
                 pipe.T_ext = 293 * ureg.K
     
-        # if hasattr(pipe, 'h_type') and pipe.h_type is not None:
-        #     try:
-        #         pipe.safety_fact
-        #     except:
-        #         pipe.safety_fact = 1
+        if hasattr(pipe, 'h_type') and pipe.h_type is not None:
+            try:
+                pipe.safety_fact
+            except:
+                pipe.safety_fact = 1
     
         Tw_i, Tw_o, Q = pipe_h_ext(fluid, pipe, m_dot, dP, h_T)  
 
