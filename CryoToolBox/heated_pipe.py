@@ -93,10 +93,10 @@ def dP_Pipe(m_dot, fluid, pipe):
         Defining the pipe characteristics 
     Returns
     -------
-    Quantity {length: -1, mass: 1, time: -2}
+    dP: Quantity {length: -1, mass: 1, time: -2}
         Pressure drop
- 
-        Heat_transfer_coefficients
+    h_T, h_Q: Quantity: {mass : 1, temperature : -1, time : -3}
+        Heat transfer coefficients
     """
 
     # Calculate fluid pameters
