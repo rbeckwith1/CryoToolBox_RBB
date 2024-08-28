@@ -14,7 +14,7 @@ from .piping import Mach, Mach_total, K_lim, ChokedFlow, HydraulicError, velocit
 import numpy as np
 
 class pipe_isolation:
-    ###  class to define the necessary isolation imputs
+    ### class to define the necessary isolation imputs
     def __init__(self, k, OD, T_ext = 293 * ureg.K):
         self.k = k
         self.OD = OD
@@ -409,6 +409,7 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
                 raise Exception('the pipe is too long')
             j += 1
             T_avg = (fluid.T + Tw_o) / 2
+       
         ###Calculate heat flux  
         Q = (- h_T * dT ).to(ureg.W/ureg.m ** 2)
     
@@ -620,6 +621,6 @@ def h_ext_(fluid, pipe, T_wall):  ### you should add the possibility to define a
             #Calculate total heat transfer coefficient 
             h = h + h_rad
 
-        if type == 3: ###including Rad ice and h_ice specific in the problem to do 
+        if type == 3: ###including Rad ice and h_ice specific in the problem: to do 
             print('to do')
     return h.to(ureg.W / ureg.K / ureg.m ** 2)
