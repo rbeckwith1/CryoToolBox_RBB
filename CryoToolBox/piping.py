@@ -534,6 +534,7 @@ class Elbow(Tube):
             B1 = 0.21*(self.R_D)**(-0.5)
 
         C1 = 1  # use different value for non-axis symmetric
+        
         # Friction losses in the elbow
         K_frict = super().K(Re_)
         return (A1*B1*C1+K_frict)*self.N
@@ -960,9 +961,8 @@ def K_piping(m_dot, fluid, piping):
 
     K0 = 0*ureg.dimensionless
 
-#if not isinstance(piping, list) *Rosalyn: fixes the error with entering a piping value as something other than a list 
+#if not isinstance(piping, list) *Rosalyn: fixed the error with entering a piping value as something other than a list 
     #piping = [piping]
-
     
     try:
         A0 = piping[0].area  # using area of the first element as base
