@@ -151,7 +151,26 @@ def dP_Pipe(m_dot, fluid, pipe):
 def find_Tw(x, T_avg, pipe, h_coeff, m_dot):
   
     """
-    Calculate the average temperature of the inner or outer wall of the component.
+    Description
+    ---------- 
+    This function is used to find the wall temperature of a system under varying conditions.   
+    Depending on the inputs, either the inner or outer wall temperature is calculated. The heat flux is calculated from the general 
+    convection equation as a function of the unknown wall temperature. Similarly, the heat flux is also calculated as a function of the 
+    unknown wall temperature using the thermal resistance of the wall. These two expressions for the heat flux are set equal to each 
+    other and squared to create a quadratic. 
+
+    
+    Schematic
+    ---------- 
+    <img src="find_Tw.jpg" alt="find_Tw" width="600" />
+    
+    Assumptions
+    ---------- 
+    - System is at steady state
+    - 1 dimensional heat transfer (radially)
+    - Constant material properties
+    - Constant wall temperature
+    - Uniform wall thickness
     
     Parameters
     ----------
@@ -219,12 +238,30 @@ def find_Tw(x, T_avg, pipe, h_coeff, m_dot):
     dQ = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (Tw_o - Tw_i))
     dH = -h_coeff * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14  
     return (dH - dQ).m_as(ureg.W) ** 2  
-    
 
 
 def pipe_Q_def(fluid, pipe, m_dot, dP, h_Q):
+    """
+    Description
+    ----------    
+    This function is used for systems with a defined constant heat flux.    
+    First, the heat flux is used to calculate the specific enthalpy of the fluid. Using the specific enthalpy and the pressure drop
+    calculated from dP_pipe, the outlet conditions are then calculated. The average temperature of the fluid is determined and used
+    to calculate the average inner wall temperature using the general convection equation. Finally, the outer wall temperature is
+    calculated using function find_Tw.
+
+    Schematic
+    ---------- 
+    <img src="pipe_Q_def.jpg" alt="pipe_Q_def" width="400" />
     
-    """Calculate the inner and outer wall temperatures of a system with a defined heat flux.
+    Assumptions
+    ---------- 
+    - System is at steady state
+    - 1 dimensional heat transfer (radially)
+    - Constant material properties
+    - Constant wall temperature
+    - Uniform wall thickness
+    - Average fluid temperature is the average of the inlet and outlet temperatures
 
     Parameters
     ----------
@@ -246,8 +283,7 @@ def pipe_Q_def(fluid, pipe, m_dot, dP, h_Q):
     -------
     `Tw_i`, `Tw_o` : Quantity {temperature: 1}
         | inside temperature of the wall, outside temperature of the wall
-     --------
-    """
+    """    
     #Calculate downstream conditions
     fluid_downstream = fluid.copy()
     dH = (pipe.Q_def * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14) / m_dot 
@@ -266,6 +302,29 @@ def pipe_Q_def(fluid, pipe, m_dot, dP, h_Q):
 # Define main functions
 def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
     """Calculate the heat flux and the inner wall temperature for a pipe with a defined external wall temperature. 
+    
+    Description
+    ----------    
+    This function is used for systems with a defined outer wall temperature.    
+    The function first assigns the average fluid temperature to a reference value and calculates the inner wall temperature 
+    using the find_Tw function. This temperature is used to calculate the specific enthalpy of the fluid. Using the specific enthalpy
+    and the pressure drop calculated from dP_pipe, the outlet conditions are determined. The average temperature is then re-calculated
+    from the inlet and outlet fluid conditions and replaces the reference average temperature value. The code continues the loop until
+    the reference average temperature value is within a particular margin of the calculated average temperature. Finally, the heat flux
+    is calculated from the general convection equation. 
+
+    Schematic
+    ----------  
+    <img src="pipe_Tw_def.jpg" alt="pipe_Tw_def" width="400" />
+    Assumptions
+    ---------- 
+    - System is at steady state
+    - 1 dimensional heat transfer (radially)
+    - Constant material properties
+    - Constant wall temperature
+    - Uniform wall thickness
+    - Average fluid temperature is the average of the inlet and outlet temperatures
+    
     Parameters
     ----------
     `dH` : Quantity {length: 2, time: -2}
@@ -341,7 +400,33 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
 def pipe_h_ext(fluid, pipe, m_dot, dP, h_T): 
     """Calculate the heat flux and the inner and outer wall temperatures for a pipe with a defined
         external heat transfer coefficient.
-     
+    Description
+    ----------    
+    This function is used for systems with a defined external fluid heat transfer coefficient or if an h_type is defined which specifies which 
+    methods of heat transfer the model should consider. These calculations are done in the h_ext_ function: an h_type = 1 indicates only convection, 
+    h_type = 2 convection and radiation, and h_type = 3 convection, radiation, and icing. For the types considering radiation, if an emissivity is 
+    not defined the system will assume polished steel (emissivity = 0.075). For these inputs, the external heat transfer coefficient is calculated 
+    assuming an external fluid of air at 293 K and 1 bar. The inner wall temperature is calculated using the convection equation for a constant heat 
+    flux considering the heat flux between the external fluid and the outer wall is equal to the heat flux between the internal fluid and the interior wall.
+    The outer wall temperature is then calculated using find_Tw described above. The specific enthalpy is calculated from the fluid's heat transfer 
+    coefficient and the temperature difference between the average temperature and the inner wall temperature. The pressure drop is calculated using
+    the Darcy equation which uses a friction coefficient based of the fluid and flow conditions (dP_pipe). Using these parameters, the outlet conditions 
+    are then calculated. The average temperature is then calculated from the inlet and outlet fluid conditions and replaces the reference average 
+    temperature value. The code continues the loop until the reference average temperature value is within a particular margin of the calculated average temperature. 
+    Finally, the heat flux is calculated from the convection equation.
+    Schematic
+    ----------  
+    <img src="pipe_h_ext.jpg" alt="pipe_h_ext" width="400" />
+    
+    Assumptions
+    ---------- 
+    - System is at steady state
+    - 1 dimensional heat transfer (radially)
+    - Constant material properties
+    - Constant wall temperature
+    - Uniform wall thickness
+    - Average fluid temperature is the average of the inlet and outlet temperatures
+    
     Parameters
     ----------
      `dH` : Quantity {length: 2, time: -2}
@@ -394,7 +479,9 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
         #Calculate Tw_o: minimum of the quadratic find_Tw_o
         Tw_o = minimize(find_Tw, x0=(fluid_external.T + T_avg).m_as(ureg.K)/ 2, args = (T_avg, pipe, h_T, m_dot), bounds=bracket).x[0] * ureg.K                                                  
         
+       
         # Caclulate external heat transfer coefficient for system: calculates h_ext for system with h_type defined otherwise uses defined h_ext
+
         h_ext = h_ext_(fluid_external, pipe, Tw_o)
         
         # Calculatue inner wall temperature
@@ -427,7 +514,31 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
 
 def pipe_insulated(fluid, pipe, m_dot, dP, h_T): 
     """Calculate the heat flux and the inner and outer wall temperatures for a pipe with defined insulation.
-     
+    Description
+    ----------    
+    This function is used for systems with a defined pipe insulation.   
+    The insulation must have a defined thermal conductivity and outer diameter. If the external temperature of the insulation is not defined,
+    the temperature is assumed to be 293K. The inner wall temperature is calculated considering that the heat flux from the convection of the
+    internal fluid and the inner wall is equal to the heat flux from the conduction of the insulation with the outer wall of the pipe. The outer
+    wall temperature is then calculated using find_Tw. . This temperature is used to calculate the specific enthalpy of the fluid. Using the 
+    specific enthalpy and the pressure drop calculated from dP_pipe, the outlet conditions are determined. The average temperature is then 
+    calculated from the inlet and outlet fluid conditions and replaces the reference average temperature value. The code continues the loop until 
+    the reference average temperature value is within a particular margin of the calculated average temperature. 
+    Finally, the heat flux is calculated from the convection equation. 
+
+    Schematic
+    ----------  
+    <img src="pipe_insulated.jpg" alt="pipe_insulated" width="400" />
+    
+    Assumptions
+    ---------- 
+    - System is at steady state
+    - 1 dimensional heat transfer (radially)
+    - Constant material properties
+    - Constant wall temperature
+    - Uniform wall thickness
+    - Average fluid temperature is the average of the inlet and outlet temperatures
+
     Parameters
     ----------
      `dH` : Quantity {length: 2, time: -2}
@@ -525,19 +636,33 @@ def pipe_heat(pipe, fluid, m_dot):
         Tw_i, Tw_o, Q = pipe_Tw_def(fluid, pipe, m_dot, dP, h_Q)
 
     ### Heat transfer or ambient/external temperature defined on the wall of the pipe
-    elif (hasattr(pipe, 'h_ext') and pipe.h_ext is not None) or (hasattr(pipe, 'h_type') and pipe.h_type is not None):
+    elif (hasattr(pipe, 'h_ext') and pipe.h_ext is not None) or (hasattr(pipe, 'considerations') and pipe.considerations is not None):
+      
         if hasattr(pipe, 'h_ext') and pipe.h_ext is not None:
             try:
                 pipe.h_ext.m_as(ureg.W / ureg.m ** 2 / ureg.K)
-            except:
+            except AttributeError:
                 raise ValueError(f"the h_ext is not properly defined in component {pipe}")
-    
+                
+        # Ensure T_ext is defined, or set it to a default value
+        if not hasattr(pipe, 'T_ext') or pipe.T_ext is None:
+            pipe.T_ext = 293 * ureg.K  # Default to 293K if T_ext is not defined
+        else:
             try:
                 pipe.T_ext.m_as(ureg.K)
-            except:
-                pipe.T_ext = 293 * ureg.K
-    
-        if hasattr(pipe, 'h_type') and pipe.h_type is not None: #make sure T_ext is also defined when using h_type
+            except AttributeError:
+                raise ValueError(f"The T_ext is not properly defined in component {pipe}")
+
+    # Check and define considerations-related parameters
+    if hasattr(pipe, 'considerations') and pipe.considerations is not None:
+        if not hasattr(pipe, 'T_ext') or pipe.T_ext is None:
+            pipe.T_ext = 293 * ureg.K  # Ensure T_ext is defined when using considerations
+        else:
+            try:
+                pipe.T_ext.m_as(ureg.K)
+            except AttributeError:
+                raise ValueError(f"The T_ext is not properly defined in component {pipe}")
+          
             try:
                 pipe.safety_fact
             except:
@@ -563,6 +688,8 @@ def pipe_heat(pipe, fluid, m_dot):
         
 
 def k_pipe(pipe, T_wall, T_ext=293 * ureg.K):     ### you should add the possibility to define a table of values to do that (for materials not in the database)
+    """Determine the thermal conductivity of the component   
+    """
     try:
         # Check if the 'pipe' object has the attribute 'k'
         if hasattr(pipe, 'k'):
@@ -589,20 +716,101 @@ def k_pipe(pipe, T_wall, T_ext=293 * ureg.K):     ### you should add the possibi
                 k = nist_property(mat, Property.TC, T1=T_ext, T2=T_wall)
     return k.to(ureg.W / ureg.K / ureg.m)
 
-def h_ext_(fluid, pipe, T_wall):  ### you should add the possibility to define a table of values to do that
-    try:
-        h = pipe.h_ext.m_as(ureg.W / ureg.K / ureg.m ** 2) * ureg.W / ureg.K / ureg.m ** 2
-    except:
+# def h_ext_(fluid, pipe, T_wall):  ### you should add the possibility to define a table of values to do that
+#     """Determine the heat transfer coefficient of the external fluid
+    
+#     """
+#     try:
+#         h = pipe.h_ext.m_as(ureg.W / ureg.K / ureg.m ** 2) * ureg.W / ureg.K / ureg.m ** 2
+#     except:
+#         try:
+#             type = pipe.h_type
+#         except:   
+#             raise Exception('You should define an external heat transfer type pipe.h_type') #or define type = 1
+#         if type >= 1: #Convection considered
+            
+#             #Calculate Rayleigh and Prandtl numbers
+#             Ra_ = Ra(fluid, T_wall, pipe.OD)
+#             Pr_ =  (fluid)
+            
+#             #Determine orientation of the pipe      
+#             try:
+#                 orientation = pipe.orientation
+#             except:
+#                 orientation = None
+#             #Calculatue Nusselt numbers  
+#             if orientation == 'vertical':        
+#                 Nu_ = Nu_vcyl(Pr_, Ra_, pipe.OD, pipe.L)
+#             elif orientation == 'horizontal':
+#                 Nu_ = Nu_hcyl(Pr_, Ra_)
+#             else:
+#                 #Use maximum Nusselt if orientation is not defined
+#                 Nu_ = max (Nu_vcyl(Pr_, Ra_, pipe.OD, pipe.L), Nu_hcyl(Pr_, Ra_))
+            
+#             #Calculate heat transfer coefficient of external fluid
+#             h = heat_trans_coef(fluid, Nu_, pipe.OD)
+        
+#         if type == 2: #Convection and radiation considered
+            
+#             #Determine emissivity of material
+#             try:
+#                 epsilon = pipe.epsilon
+#             except:
+#                 #Assume material is polished steel if not defined
+#                 epsilon = 0.075 
+            
+#             #Calculate radiation heat transfer coefficient
+#             sigma = 5.670373e-8 * ureg.W/ureg.m ** 2 / ureg.K ** 4
+#             h_rad = epsilon * sigma * (fluid.T ** 4 - T_wall ** 4) / (fluid.T - T_wall) 
+            
+#             #Calculate total heat transfer coefficient 
+#             h = h + h_rad
+
+#         if type == 3: ###including Rad ice and h_ice specific in the problem: to do 
+#             print('to do')
+#         else:
+#             raise ValueError("Insufficient or invalid parameters provided. Please provide an external heat transfer coefficient or an h_type")   
+   
+#     return h.to(ureg.W / ureg.K / ureg.m ** 2)
+
+def h_ext_(fluid, pipe, T_wall, considerations=None): ### you should add the possibility to define a table of values to do that
+    """Determine the heat transfer coefficient of the external fluid."""
+    if isinstance(considerations, str):
+        considerations = (considerations,)
+
+    # Set default considerations if not already set
+    if not hasattr(pipe, 'considerations'):
+        setattr(pipe, 'considerations', ('convection', 'radiation', 'icing'))
+    else:
+        # Ensure pipe.considerations is a tuple if set externally
+        if isinstance(pipe.considerations, str):
+            pipe.considerations = (pipe.considerations,)
+            
+    # Attempt to use h_ext if it's defined
+    if getattr(pipe, 'h_ext', None) is not None:
         try:
-            type = pipe.h_type
-        except:   
-            raise Exception('You should define an external heat transfer type pipe.h_type') #or define type = 1
-        if type >= 1: #Convection considered
+            h = pipe.h_ext.m_as(ureg.W / ureg.K / ureg.m ** 2) * ureg.W / ureg.K / ureg.m ** 2
+        except AttributeError:
+            raise Exception('h_ext is defined but does not have the expected type or methods.')
+    else:
+        # Use considerations if h_ext is not defined
+        considerations = considerations or getattr(pipe, 'considerations', None)
+        
+        if considerations is None:
+            raise Exception('You should provide considerations to calculate the external heat transfer coefficient.')
+        
+        # Convert considerations to a set for faster lookup
+        considerations = set(considerations)
+        
+        # Initialize heat transfer coefficient
+        h = 0
+
+        if 'convection' in considerations: #Convection considered
             
             #Calculate Rayleigh and Prandtl numbers
             Ra_ = Ra(fluid, T_wall, pipe.OD)
             Pr_ = Pr(fluid)
-            
+
             #Determine orientation of the pipe      
             try:
                 orientation = pipe.orientation
@@ -619,8 +827,8 @@ def h_ext_(fluid, pipe, T_wall):  ### you should add the possibility to define a
             
             #Calculate heat transfer coefficient of external fluid
             h = heat_trans_coef(fluid, Nu_, pipe.OD)
-        
-        if type == 2: #Convection and radiation considered
+
+        if 'radiation' in considerations:  #radiation considered
             
             #Determine emissivity of material
             try:
@@ -636,6 +844,10 @@ def h_ext_(fluid, pipe, T_wall):  ### you should add the possibility to define a
             #Calculate total heat transfer coefficient 
             h = h + h_rad
 
-        if type == 3: ###including Rad ice and h_ice specific in the problem: to do 
+        if 'icing' in considerations: ###including Rad ice and h_ice specific in the problem: to do 
             print('to do')
+        
+        if h == 0:
+            raise ValueError("The calculated heat transfer coefficient is zero, indicating invalid or missing considerations.")
+
     return h.to(ureg.W / ureg.K / ureg.m ** 2)
