@@ -1001,6 +1001,8 @@ def dP_incomp(m_dot, fluid, piping):
     P_0 = fluid.P
     T_0 = fluid.T
     rho_0 = fluid.Dmass
+    if not isinstance(piping,list):
+        piping = [piping]    
     K, area = K_piping(m_dot, fluid, piping)
     w = m_dot / (rho_0*area)
     return dP_Darcy(K, rho_0, w)
