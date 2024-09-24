@@ -237,7 +237,7 @@ def find_Tw(x, T_avg, pipe, h_coeff, m_dot, condition): #add parameter condition
     k = k_pipe(pipe, Tw_o, Tw_i)
     Q_cond = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (Tw_o - Tw_i))
     Q_conv = -h_coeff * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14  
-
+    
     return (Q_conv - Q_cond).m_as(ureg.W) ** 2  
 
 
@@ -407,21 +407,25 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
             
         # Calculate Tw_i:  minimum of the quadratic find_Tw
         condition = 2 # condition to designate Tw_def in find_tw
+
         Tw_i = minimize(find_Tw,  x0 = T_avg.m_as(ureg.K), args = (T_avg, pipe, h_T, m_dot, condition), bounds=[bracket]).x[0] *ureg.K        
         
         ### Calculate downstream fluid conditions
         dT = T_avg - Tw_i
         dH = - h_T * dT * pipe.ID * pipe.L * 3.14 / m_dot
+
         fluid_out.update('P', fluid.P - dP,'Hmass', H + dH.to(ureg.J/ureg.kg))
         T_out = fluid_out.T   
-
+ 
+        
         ###Check convergence of T_average               
         T_avg_new = (fluid.T + T_out)/2
         res = ((T_avg_new - T_avg)**2 / (T_out - fluid.T)**2)
 
         ##Update average temperature
         T_avg = T_avg_new
- 
+
+        
         ### Eliminate nonphysical solutions         
         if (fluid.T < Tw_o and T_out > Tw_o) or (fluid.T > Tw_o and T_out < Tw_o):
             if j > 0:
