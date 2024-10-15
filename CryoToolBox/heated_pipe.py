@@ -13,15 +13,39 @@ from .piping import Mach, Mach_total, K_lim, ChokedFlow, HydraulicError, velocit
 import numpy as np
 import matplotlib.pyplot as plt
 
+# #Tell pdoc not to include in documentation
+# __pdoc__ = {
+#     'pipe_isolation.__init__': False,  # Exclude the whole constructor
+# }
+
+
 class pipe_isolation:
     """
-    Class to define the necessary isolation inputs.
+    Description
+    ----------  
+    This class contains the function `pipe_heat` which is directly referenced by the calling code.    
+   
+    Depending on the defined conditions of the system, `pipe_heat` will call one of the following functions:
+    `pipe_Q_def`, `pipe_Tw_def`,`pipe_h_ext`, `pipe_insulated`.    
+    
+    Additionally, the functions `laminar_flow`, `turbulent_flow`, `dP_Pipe`, `find_Tw`, `k_pipe`, and `h_ext_`
+    are used throughout the script to determine the thermal and fluid properties of the system. 
+    
+    Assumptions
+    ---------- 
+    - System is at steady state
+    - 1 dimensional heat transfer
+    - Constant material properties
+    - Constant wall temperature
+    - Uniform wall thickness
     """
-    def __init__(self, k, OD, T_ext=293 * ureg.K):
-        self.k = k
-        self.OD = OD
-        self.T_ext = T_ext
-      
+
+    def __init__(self, k, OD, T_ext=293 * ureg.K):  
+         self.k = k
+         self.OD = OD
+         self.T_ext = T_ext 
+
+
 def laminar_flow(Re_, Pr_, L_ID):
     """
     Non dimentional calculation of the Nusselt and fiction factor in pipe in laminar flow  
@@ -93,7 +117,6 @@ def dP_Pipe(m_dot, fluid, pipe):
     `fluid` : ThermState | Inlet fluid conditions   
     `m_dot` : Quantity {mass: 1, time: -1} | mass flow rate     
     `pipe` : Pipe | defines the pipe characteristics 
-    
     Returns
     -------
     `dP`: Quantity {length: -1, mass: 1, time: -2} | Pressure drop   
@@ -148,29 +171,29 @@ def dP_Pipe(m_dot, fluid, pipe):
     
     return dP.to(ureg.pascal), h_T, h_Q
 
-
 def find_Tw(x, T_avg, pipe, h_coeff, m_dot, condition): #add parameter conditions
   
     """
     Description
     ---------- 
-    This function is used to find the wall temperature of a system under varying conditions.   
-    Depending on the inputs, either the inner or outer wall temperature is calculated. The heat flux is calculated from the general 
-    convection equation as a function of the unknown wall temperature. This is shown visually below in Figure 1 (a).       
-    
-    <img src="find_Tw.jpg" alt="find_Tw" width="600" />   
-    
-    Similarly, the heat flux is also calculated as a function of the unknown wall temperature using the thermal resistance of the wall. 
-    These two expressions for the heat flux are set equal to each her and squared to create a quadratic. 
-    
-    Assumptions
-    ---------- 
-    - System is at steady state
-    - 1 dimensional heat transfer (radially)
-    - Constant material properties
-    - Constant wall temperature
-    - Uniform wall thickness
-    
+    This function is used to find the wall temperature of a pipe. 
+    The system can either have a defined applied heat flux (`pipe_Q_def`), pipe outer wall temperature (`pipe_Tw_def`), 
+    external fluid heat transfer coefficient (`pipe_h_ext`), or pipe insulation (`pipe_insulated`).  
+    <div style="text-align: center;">
+        <img src="find_Tw.jpg" alt="find_Tw" width="400" />
+    </div> 
+    Depending on the inputs, either the inner or outer wall temperature is calculated. The heat flux, $q"$ is calculated 
+    from the general convection equation as a function of the unknown wall temperature shown below in Equation #. Here $h$ is the heat transfer
+    coefficient, $T_{avg}$ is the average fluid temperature, and $Tw_i$ and $Tw_o$ are the inner and outer wall temperatures respectively.      
+    $$ q"_{conv} = h * (Tw_i – T_{avg}) $$ 
+    Similarly, the heat flux is also calculated as a function of the unknown wall temperature from the conduction equation.  
+    $$ q"_{cond} = (Tw_o – Tw_i)/ R_L $$ 
+    $ R_L $ is the thermal resistance of the wall defined below in Equation # where $k$ is the thermal resistance of the wall, $L$ is the length of the pipe, 
+    and $D_o$ and $D_i$ are the outer and inner diameters of the pipe respectively. 
+    $$ R_L = log(D_o/D_i) / (2 * pi * L * k) $$ 
+    These two expressions for heat flux are set equal to each other and squared to create a quadratic.     
+    $$ (q"_{conv} - q"_{cond})^2 = 0 $$ 
+    The minimize function is used to find the solution of the quadratic: the unknown wall temperature.   
     Parameters
     ----------
   
@@ -209,7 +232,7 @@ def find_Tw(x, T_avg, pipe, h_coeff, m_dot, condition): #add parameter condition
     
     if condition == 1:
         #For a system with defined heat load: pipe_Q_def
-        Tw_i = T_avg + pipe.Q_def/h_coeff
+        Tw_i = T_avg + pipe.Q_def/h_coeff * (pipe.OD / pipe.ID)
         Tw_o =  x * ureg.K
         
     elif condition == 2:
@@ -245,24 +268,19 @@ def pipe_Q_def(fluid, pipe, m_dot, dP, h_Q):
     """
     Description
     ----------    
-    This function is used for systems with a defined constant heat flux. The set-up of the function is displayed below in Figure 2. 
-    
-    <img src="pipe_Q_def.jpg" alt="pipe_Q_def" width="400" />
-        
-    First, the heat flux is used to calculate the specific enthalpy of the fluid. Using the specific enthalpy and the pressure drop
-    calculated from dP_pipe, the outlet conditions are then calculated. The average temperature of the fluid is determined and used
-    to calculate the average inner wall temperature using the general convection equation. Finally, the outer wall temperature is
-    calculated using function find_Tw.
-
-    Assumptions
-    ---------- 
-    - System is at steady state
-    - 1 dimensional heat transfer (radially)
-    - Constant material properties
-    - Constant wall temperature
-    - Uniform wall thickness
-    - Average fluid temperature is the average of the inlet and outlet temperatures
-
+    This function is used for systems with a defined constant heat flux. The set-up of the function is displayed below in Figure #. 
+    <div style="text-align: center;">
+        <img src="pipe_Q_def.jpg" alt="pipe_Q_def" width="400" />  
+    </div>     
+    The heat flux is used to calculate the fluid’s change of enthalpy. This is done using Equation # shown below where $dH$ is the 
+    change in enthalpy, $q"$ is the defined heat flux, $S_i$ is the pipe's inner surface area, and $m_{dot}$ is the mass flow rate.  
+    $$ dH = q" * S_i/m_{dot} $$
+    Using the pressure drop calculated from dP_pipe, the outlet conditions are calculated. The average temperature of the fluid is determined from the inlet and
+    outlet temperatures and assumes a linear temperature gradient. This average temperature is used to calculate the average inner wall temperature using the general 
+    convection equation shown below in Equation #. 
+    $$ Tw_i = Q/(h_Q * S_i) + T_{avg}  $$
+    In the above expression, $Q$ is the heat load, $h_Q$ is the heat transfer coefficient calculated considering a constant heat flux, 
+    and $T_{avg}$ is the avaerage temperatue of the fluid. Finally, the outer wall temperature is calculated using function `find_Tw`.
     Parameters
     ----------
     `dH`: Quantity {length: 2, time: -2} 
@@ -286,82 +304,48 @@ def pipe_Q_def(fluid, pipe, m_dot, dP, h_Q):
     """    
     #Calculate downstream conditions
     fluid_outlet = fluid.copy()
-    dH = (pipe.Q_def * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14) / m_dot 
+    dH = (pipe.Q_def * pipe.OD.to(ureg.m) * pipe.L.to(ureg.m) * 3.14) / m_dot #should be the outer diameter, could explain issues
     fluid_outlet.update('P', fluid.P - dP, 'Hmass' , fluid.Hmass + dH.to(ureg.J/ureg.kg)) 
     
     ##Calculate the average temperature of the fluid inside the component
     T_avg = (fluid.T + fluid_outlet.T)/2   
     
     #Calculate Tw_i and Tw_o: minimum of the quadratic find_Tw
-    Tw_i = T_avg + pipe.Q_def/h_Q 
+    Tw_i = T_avg + pipe.Q_def / h_Q * (pipe.OD / pipe.ID)
     
     # Assign bounds for minimize function to operate within
     dT = log(pipe.OD/pipe.ID)*(pipe.Q_def*pipe.OD)/(2*k_pipe(pipe,Tw_i))
     
-    if pipe.Q_def > 0 * ureg.W/ureg.m**2 :
-        bounds = [(Tw_i.m_as(ureg.K), (Tw_i + dT*2).m_as(ureg.K))]
-    else:
-        bounds = [((Tw_i + dT*2).m_as(ureg.K), Tw_i.m_as(ureg.K))]
-    
     # Calculate Tw_o: minimum of the quadratic find_Tw
     condition = 1 # condition to designate Q_def in find_tw
-    Tw_o = minimize(find_Tw, x0=T_avg.m_as(ureg.K) + 1, args=(T_avg, pipe, h_Q, m_dot, condition), bounds=bounds).x[0] * ureg.K
+    if pipe.Q_def == 0*ureg.W/ureg.m**2 :
+        Tw_o = T_avg
+    else:
+        # Tw_o = minimize(find_Tw, x0=T_avg.m_as(ureg.K) + 1, args=(T_avg, pipe, h_Q, m_dot, condition), bounds=bounds).x[0] * ureg.K
+        Tw_o = root_scalar(find_Tw, x0 = (Tw_i + dT/2).m_as(ureg.K), x1 = (Tw_i + dT).m_as(ureg.K), args=(T_avg, pipe, h_Q, m_dot, condition)).root * ureg.K
 
-    # # Confrim bounds: define a function to calculate the error for different Tw_o values
-    # def calculate_error_for_range(Tw_range, T_avg, pipe, h_coeff, m_dot):
-    #     errors = []
-    #     for Tw_o in Tw_range:
-    #         error = find_Tw(Tw_o, T_avg, pipe, h_coeff, m_dot,condition)
-    #         errors.append(error)
-    #     return errors
-
-    # # Define a range of Tw_o values to test
-    # Tw_o_values = np.linspace(1, 250, 100) 
-    # # Calculate errors for each Tw_o value
-    # errors = calculate_error_for_range(Tw_o_values, T_avg, pipe, h_Q, m_dot)
-    # # Plot the results
-    # plt.figure(figsize=(8,6))
-    # plt.plot(Tw_o_values, errors, label='Error between Q_cond and Q_conv')
-    # plt.xlabel('Tw_o (K)')
-    # plt.ylabel('Error')
-    # plt.title('Error in Q_cond vs Q_conv as a function of Tw_o')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
-    
-    # Error for when the guess value for Tw_o reaches the bracket bounds
-    if Tw_o == Tw_i+dT*2:
-       raise ValueError("Tw_o reached the bounds limit value in pipe_Q_def function") 
-        
     return Tw_i, Tw_o  
- 
+
 
 # Define main functions
 def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
-    """Calculate the heat flux and the inner wall temperature for a pipe with a defined external wall temperature. 
-    
+    """
     Description
     ----------    
-    This function is used for systems with a defined outer wall temperature. The set-up is shown below in Figure 3 with the inputs highlighted. 
-
-    <img src="pipe_Tw_def.jpg" alt="pipe_Tw_def" width="400" />      
-    
-    The function first assigns the average fluid temperature to a reference value and calculates the inner wall temperature 
-    using the find_Tw function defined above. The specific enthalpy of the fluid ia calculated from the inner wall temperature.
-    Using the specific enthalpy and the pressure drop calculated from dP_pipe, the outlet conditions are determined. 
-    The average temperature is then re-calculated from the inlet and outlet fluid conditions and replaces the reference average temperature value. 
-    The code continues the loop until the reference average temperature value is within a particular margin of the calculated average 
-    temperature. Finally, the heat flux is calculated from the general convection equation. 
- 
-    Assumptions
-    ---------- 
-    - System is at steady state
-    - 1 dimensional heat transfer (radially)
-    - Constant material properties
-    - Constant wall temperature
-    - Uniform wall thickness
-    - Average fluid temperature is the average of the inlet and outlet temperatures
-    
+    This function is used for systems with a constant pipe outer wall temperature. 
+    The set-up is shown below in Figure # with the inputs highlighted. 
+    <div style="text-align: center;">
+        <img src="pipe_Tw_def.jpg" alt="pipe_Tw_def" width="400" />   
+    </div>         
+    The inner wall temperature is calculated in `find_Tw` from the average temperature which is initially assigned to a reference value.
+    The inner wall temperature is used in Equation # described in `pipe_Q_def` to calculate the change in enthalpy of the fluid.
+    The outlet pressure is calculated in `dP_Pipe`. Additionally, the outlet pressure is calculated in `dP_pipe`. 
+    Knowing these fluid conditions, the outlet temperature of the fluid is determined.
+    The average temperature is then re-calculated from the inlet and outlet fluid temperatures using Equation #.  
+    $$ T_{avg} = (T_{inlet} + T_{outlet})/2 $$
+    This value replaces the reference value, and the code loops until the reference temperature and the the calculated average temperature converge.
+    Once $T_{avg}$ is known, the heat flux is calculated from the general convection equation shown below in Equation # where $h_T$ is the heat transfer coefficient calculated in `dP_Pipe`. 
+    $$q” = -h_T * (T_{avg}-Tw_i) $$ 
     Parameters
     ----------
     `dH` : Quantity {length: 2, time: -2}
@@ -440,33 +424,29 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
 
 
 def pipe_h_ext(fluid, pipe, m_dot, dP, h_T): 
-    """Calculate the heat flux and the inner and outer wall temperatures for a pipe with a defined
-        external heat transfer coefficient.
+    """
     Description
     ----------    
-    This function is used for systems with a defined external fluid heat transfer coefficient or if the methods of heat transfer to be considered are defined.
-    The set-up for this function is displayed below in Figure 5 with the input variables highlighted. 
-    
-    <img src="pipe_h_ext.jpg" alt="pipe_h_ext" width="400" />   
-    
-    The calculations to compute the external heat transfer coefficient are done in the h_ext_ function defined below. The inner wall temperature is calculated using
-    the convection equation for a constant heat flux considering the heat flux between the external fluid and the outer wall is equal to the heat flux between the internal fluid and the interior wall.
-    The outer wall temperature is then calculated using find_Tw described above. The specific enthalpy is calculated from the fluid's heat transfer 
-    coefficient and the temperature difference between the average temperature and the inner wall temperature. The pressure drop is calculated using
-    the Darcy equation which uses a friction coefficient based of the fluid and flow conditions (dP_pipe). Using these parameters, the outlet conditions 
-    are then calculated. The average temperature is then calculated from the inlet and outlet fluid conditions and replaces the reference average 
-    temperature value. The code continues the loop until the reference average temperature value is within a particular margin of the calculated average temperature. 
-    Finally, the heat flux is calculated from the convection equation.
-
-    Assumptions
-    ---------- 
-    - System is at steady state
-    - 1 dimensional heat transfer (radially)
-    - Constant material properties
-    - Constant wall temperature
-    - Uniform wall thickness
-    - Average fluid temperature is the average of the inlet and outlet temperatures
-    
+    This function is used for systems with defined external conditions. Either the heat transfer coefficient of the external fluid can be defined, or 
+    methods of heat transfer to be considered can be specified. This is computed and explained in `heated_pipe`.    
+    The set-up for this function is displayed below in Figure # with the input variables highlighted. 
+    <div style="text-align: center;">
+        <img src="pipe_h_ext.jpg" alt="pipe_h_ext" width="400" />  
+    </div>     
+    The outer wall temperature, $Tw_o$, is calculated in `find_Tw` from the average temperature, $T_{avg}$, which is initially assigned to a reference value.
+    The expression for the heat flux due to convection of the external fluid and the outer wall is defined below in Equation # where $h_{ext}$ is the external 
+    heat transfer coefficient, $D_o$ is the outer diameter, $D_i$ is the inner diameter, and $T_{ext}$ is the external fluid temperature. 
+    The external fluid heat transfer coefficient is determined in the function `h_ext_`.
+    $$ q" = (T_{ext}-Tw_o) * h_{ext} * S_o $$
+    The heat flux can also be calculated from the convection between the internal fluid and the inner wall defined below in Equation #. 
+    $$ q" = (Tw_i - T_{avg}) * h_T * S_i $$
+    Combining and similifying these equations, an expression for the inner wall temperature, Equation #, is found.  
+    $$Tw_i = [h_{ext} * D_o * (T_{ext} - Tw_o) / (h_T * D_i)] + T_{avg}$$
+    The inner wall temperature is calculated and used in Equation # described in `pipe_Q_def` to calculate the change in enthalpy of the fluid.
+    Additionally, the outlet pressure is calculated in `dP_Pipe`. 
+    Knowing these fluid conditions, the outlet temperature of the fluid is determined. The average temperature is then re-calculated from the inlet and outlet fluid 
+    conditions using Equation # explained above in `pipe_Tw_def`. This value replaces the reference value, and the code loops until the reference temperature and the the calculated average temperature converge. 
+    Once $T_{avg}$ is known, the heat flux is calculated from Equation #.
     Parameters
     ----------
      `dH` : Quantity {length: 2, time: -2}
@@ -487,9 +467,10 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
         | define the pipe characteristics    
     `T_avg` : Quantity {temperature: 1}
         | average temperature of the fluid   
+    `T_ext` : Quantity {temperature: 1}
+        | average temperature of the external fluid          
     `T_out` : Quantity {temperature: 1}
-        | temperature of oulet fluid
-     
+        | temperature of oulet fluid  
     Returns
     ---------
      `Tw_i` and `Tw_o` : Quantity {temperature: 1}
@@ -520,7 +501,6 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
         condition = 3
         Tw_o = minimize(find_Tw, x0=(fluid_external.T + T_avg).m_as(ureg.K)/ 2, args = (T_avg, pipe, h_T, m_dot, condition), bounds=bracket).x[0] * ureg.K                                                  
         
-       
         # Caclulate external heat transfer coefficient for system: calculates h_ext for system with h_type defined otherwise uses defined h_ext
         h_ext = h_ext_(fluid_external, pipe, Tw_o)
         
@@ -553,33 +533,28 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
         return Tw_i, Tw_o, Q
 
 def pipe_insulated(fluid, pipe, m_dot, dP, h_T): 
-    """Calculate the heat flux and the inner and outer wall temperatures for a pipe with defined insulation.
+    """
     Description
     ----------    
-    This function is used for systems with a defined pipe insulation. 
-    The set-up of the function is shown below in Figure 6 where the variable inputs to the function are highlighted.
-    
-    <img src="pipe_insulated.jpg" alt="pipe_insulated" width="400" />    
-    
-    The insulation must have a defined thermal conductivity and outer diameter. If the external temperature of the insulation is not defined,
-    the temperature is assumed to be 293K. The inner wall temperature is calculated considering that the heat flux from the convection of the
-    internal fluid and the inner wall is equal to the heat flux from the conduction of the insulation with the outer wall of the pipe. The outer
-    wall temperature is then calculated using find_Tw. This temperature is used to calculate the specific enthalpy of the fluid. Using the 
-    specific enthalpy and the pressure drop calculated from dP_pipe, the outlet conditions are determined. The average temperature is then 
-    calculated from the inlet and outlet fluid conditions and replaces the reference average temperature value. The code continues the loop until 
-    the reference average temperature value is within a particular margin of the calculated average temperature. 
-    Finally, the heat flux is calculated from the convection equation. 
- 
-
-    Assumptions
-    ---------- 
-    - System is at steady state
-    - 1 dimensional heat transfer (radially)
-    - Constant material properties
-    - Constant wall temperature
-    - Uniform wall thickness
-    - Average fluid temperature is the average of the inlet and outlet temperatures
-
+    This function is used for piping systems with insulation. The insulation must have a defined thermal conductivity and outer diameter. 
+    The external temperature of the insulation is assumed to be $293K$ if not specifically defined.   
+    The set-up of the function is shown below in Figure # where the variable inputs to the function are highlighted.
+    <div style="text-align: center;">
+        <img src="pipe_insulated.jpg" alt="pipe_insulated" width="400" />
+    </div>
+    The outer wall temperature, $Tw_o$, is calculated in `find_Tw` from the average temperature, $T_{avg}$ , which is initially assigned to a reference value.
+    The expression for the heat flux due to convection of the internal fluid and the inner wall is defined below in Equation # where $h_{ext}$ is the external 
+    heat transfer coefficient, $D_o$ is the outer diameter, $ D_i $ is the inner diameter, and $T_{ext}$ is the external fluid temperature.
+    $$ q" = (Tw_i - T_{avg}) * h_T * S_i $$
+    The heat flux can also be calculated from the conduction between the insulation with the outer wall of the pipe defined below in Equation # where $R_L$ is the thermal resistance of the wall. 
+    $$ q" = (T_{ext}-Tw_o) / R_L $$
+    Combining and similifying these equations, an expression for the inner wall temperature, Equation #, is found.  
+    $$ Tw_i = ((k_{ins}* (T_{ext} - Tw_o) )/ (h_T * D_i * log(D_o/D_i)) +T_{avg} $$ 
+    The inner wall temperature is calculated and used in Equation # described in `pipe_Q_def` to calculate the change in enthalpy of the fluid.
+    Additionally, the outlet pressure is calculated in `dP_pipe`. 
+    Knowing these fluid conditions, the outlet temperature of the fluid is determined. The average temperature is then re-calculated from the inlet and outlet fluid 
+    conditions using Equation # explained above in `pipe_Tw_def`. This value replaces the reference value, and the code loops until the reference temperature and the the calculated average temperature converge. 
+    Once $T_{avg}$ is known, the heat flux is calculated from Equation #.
     Parameters
     ----------
      `dH` : Quantity {length: 2, time: -2}
@@ -597,10 +572,11 @@ def pipe_insulated(fluid, pipe, m_dot, dP, h_T):
     `pipe` : Pipe
         | define the pipe characteristics    
     `T_avg` : Quantity {temperature: 1}
-        | average temperature of the fluid   
+        | average temperature of the fluid  
+    `T_ext` : Quantity {temperature: 1}
+        | average temperature of insulation's external wall    
     `T_out` : Quantity {temperature: 1}
-        | temperature of outlet fluid
-        
+        | temperature of outlet fluid  
     Returns
     ----------
      `Tw_i` and `Tw_o` : Quantity {temperature: 1}
@@ -655,7 +631,16 @@ def pipe_insulated(fluid, pipe, m_dot, dP, h_T):
 
 
 def pipe_heat(pipe, fluid, m_dot):
-    """Determine the heated status of the piping component
+    """   
+    Determine the heated status of the piping component with one of the following systems:   
+        
+        1. Defined applied heat flux    
+        2. Constant outerwall temperature
+        3. Defined properties for the external fluid 
+        4. Insulation   
+           
+    If no parameters are specified then `pipe_Q_def` is run using a heat load of $ Q = 0  W/m^2 $. 
+        
     """
     ### Calculate pressure drop and heat transfer coefficient
     dP, h_T, h_Q = dP_Pipe(m_dot, fluid, pipe)  
@@ -729,8 +714,11 @@ def pipe_heat(pipe, fluid, m_dot):
     return Tw_i.to(ureg.K), Tw_o.to(ureg.K), dP.to(ureg.bar), Q.to(ureg.W/ ureg.m ** 2)
         
 
-def k_pipe(pipe, T_wall, T_ext=293 * ureg.K):     ### you should add the possibility to define a table of values to do that (for materials not in the database)
-    """Determine the thermal conductivity of the component   
+def k_pipe(pipe, T_wall, T_ext = 293 * ureg.K):     ### you should add the possibility to define a table of values to do that (for materials not in the database)
+    """This function assigns the thermal conductivity, k.    
+    Either the conductivity is specifically defined or it is calculated accourding to the material and the input temperatures (typically the inner 
+    and outer wall temperatures) using the NIST property tables.
+    If no material or outer wall temperature is defined, stainless steel 304 and ambient temperature (293K) is assumed receptively.
     """
     try:
         # Check if the 'pipe' object has the attribute 'k'
@@ -816,14 +804,16 @@ def k_pipe(pipe, T_wall, T_ext=293 * ureg.K):     ### you should add the possibi
 #     return h.to(ureg.W / ureg.K / ureg.m ** 2)
 
 def h_ext_(fluid, pipe, T_wall, considerations=None): ### you should add the possibility to define a table of values to do that
-    """Determine the heat transfer coefficient of the external fluid.
-    
-    h_ext_ function: an h_type = 1 indicates only convection, 
-    h_type = 2 convection and radiation, and h_type = 3 convection, radiation, and icing. For the types considering radiation, if an emissivity is 
-    not defined the system will assume polished steel (emissivity = 0.075). For these inputs, the external heat transfer coefficient is calculated 
-    assuming an external fluid of air at 293 K and 1 bar.
-    
-    
+    """This function determines the heat transfer coefficient of the external fluid surrounding the pipe.    
+    If an external heat transfer coefficient is not defined, then it is calculted assuming an external fluid of air at 293 K and 1 bar. 
+    Specific heat transfer conditions can be specified in the variable pipe.considerations. 
+    Considerations can include:     
+        
+        1. Convection     
+        2. Radiation  
+        3. Icing    
+        
+    For considerations with radiation, if an emissivity is not defined the system will assume polished steel (emissivity = 0.075). 
     """
     if isinstance(considerations, str):
         considerations = (considerations,)
