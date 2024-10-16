@@ -180,7 +180,7 @@ def find_Tw(x, T_avg, pipe, h_coeff, m_dot, condition): #add parameter condition
     The system can either have a defined applied heat flux (`pipe_Q_def`), pipe outer wall temperature (`pipe_Tw_def`), 
     external fluid heat transfer coefficient (`pipe_h_ext`), or pipe insulation (`pipe_insulated`).  
     <div style="text-align: center;">
-        <img src="find_Tw.jpg" alt="find_Tw" width="400" />
+        <img src="find_Tw.jpg" alt="find_Tw" width="600" />
     </div> 
     Depending on the inputs, either the inner or outer wall temperature is calculated. The heat flux, $q"$ is calculated 
     from the general convection equation as a function of the unknown wall temperature shown below in Equation #. Here $h$ is the heat transfer
@@ -270,7 +270,7 @@ def pipe_Q_def(fluid, pipe, m_dot, dP, h_Q):
     ----------    
     This function is used for systems with a defined constant heat flux. The set-up of the function is displayed below in Figure #. 
     <div style="text-align: center;">
-        <img src="pipe_Q_def.jpg" alt="pipe_Q_def" width="400" />  
+        <img src="pipe_Q_def.jpg" alt="pipe_Q_def" width="550" />  
     </div>     
     The heat flux is used to calculate the fluid’s change of enthalpy. This is done using Equation # shown below where $dH$ is the 
     change in enthalpy, $q"$ is the defined heat flux, $S_i$ is the pipe's inner surface area, and $m_{dot}$ is the mass flow rate.  
@@ -335,7 +335,7 @@ def pipe_Tw_def(fluid, pipe, m_dot, dP, h_T):
     This function is used for systems with a constant pipe outer wall temperature. 
     The set-up is shown below in Figure # with the inputs highlighted. 
     <div style="text-align: center;">
-        <img src="pipe_Tw_def.jpg" alt="pipe_Tw_def" width="400" />   
+        <img src="pipe_Tw_def.jpg" alt="pipe_Tw_def" width="600" />   
     </div>         
     The inner wall temperature is calculated in `find_Tw` from the average temperature which is initially assigned to a reference value.
     The inner wall temperature is used in Equation # described in `pipe_Q_def` to calculate the change in enthalpy of the fluid.
@@ -431,7 +431,7 @@ def pipe_h_ext(fluid, pipe, m_dot, dP, h_T):
     methods of heat transfer to be considered can be specified. This is computed and explained in `heated_pipe`.    
     The set-up for this function is displayed below in Figure # with the input variables highlighted. 
     <div style="text-align: center;">
-        <img src="pipe_h_ext.jpg" alt="pipe_h_ext" width="400" />  
+        <img src="pipe_h_ext.jpg" alt="pipe_h_ext" width="600" />  
     </div>     
     The outer wall temperature, $Tw_o$, is calculated in `find_Tw` from the average temperature, $T_{avg}$, which is initially assigned to a reference value.
     The expression for the heat flux due to convection of the external fluid and the outer wall is defined below in Equation # where $h_{ext}$ is the external 
@@ -540,7 +540,7 @@ def pipe_insulated(fluid, pipe, m_dot, dP, h_T):
     The external temperature of the insulation is assumed to be $293K$ if not specifically defined.   
     The set-up of the function is shown below in Figure # where the variable inputs to the function are highlighted.
     <div style="text-align: center;">
-        <img src="pipe_insulated.jpg" alt="pipe_insulated" width="400" />
+        <img src="pipe_insulated.jpg" alt="pipe_insulated" width="600" />
     </div>
     The outer wall temperature, $Tw_o$, is calculated in `find_Tw` from the average temperature, $T_{avg}$ , which is initially assigned to a reference value.
     The expression for the heat flux due to convection of the internal fluid and the inner wall is defined below in Equation # where $h_{ext}$ is the external 

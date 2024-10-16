@@ -299,7 +299,7 @@ CryoToolBox<wbr>.heated_pipe    </h1>
 </span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a><span class="sd">    The system can either have a defined applied heat flux (`pipe_Q_def`), pipe outer wall temperature (`pipe_Tw_def`), </span>
 </span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a><span class="sd">    external fluid heat transfer coefficient (`pipe_h_ext`), or pipe insulation (`pipe_insulated`).  </span>
 </span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a><span class="sd">    &lt;div style=&quot;text-align: center;&quot;&gt;</span>
-</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a><span class="sd">        &lt;img src=&quot;find_Tw.jpg&quot; alt=&quot;find_Tw&quot; width=&quot;400&quot; /&gt;</span>
+</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a><span class="sd">        &lt;img src=&quot;find_Tw.jpg&quot; alt=&quot;find_Tw&quot; width=&quot;600&quot; /&gt;</span>
 </span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a><span class="sd">    &lt;/div&gt; </span>
 </span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a><span class="sd">    Depending on the inputs, either the inner or outer wall temperature is calculated. The heat flux, $q&quot;$ is calculated </span>
 </span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a><span class="sd">    from the general convection equation as a function of the unknown wall temperature shown below in Equation #. Here $h$ is the heat transfer</span>
@@ -389,7 +389,7 @@ CryoToolBox<wbr>.heated_pipe    </h1>
 </span><span id="L-270"><a href="#L-270"><span class="linenos">270</span></a><span class="sd">    ----------    </span>
 </span><span id="L-271"><a href="#L-271"><span class="linenos">271</span></a><span class="sd">    This function is used for systems with a defined constant heat flux. The set-up of the function is displayed below in Figure #. </span>
 </span><span id="L-272"><a href="#L-272"><span class="linenos">272</span></a><span class="sd">    &lt;div style=&quot;text-align: center;&quot;&gt;</span>
-</span><span id="L-273"><a href="#L-273"><span class="linenos">273</span></a><span class="sd">        &lt;img src=&quot;pipe_Q_def.jpg&quot; alt=&quot;pipe_Q_def&quot; width=&quot;400&quot; /&gt;  </span>
+</span><span id="L-273"><a href="#L-273"><span class="linenos">273</span></a><span class="sd">        &lt;img src=&quot;pipe_Q_def.jpg&quot; alt=&quot;pipe_Q_def&quot; width=&quot;550&quot; /&gt;  </span>
 </span><span id="L-274"><a href="#L-274"><span class="linenos">274</span></a><span class="sd">    &lt;/div&gt;     </span>
 </span><span id="L-275"><a href="#L-275"><span class="linenos">275</span></a><span class="sd">    The heat flux is used to calculate the fluid’s change of enthalpy. This is done using Equation # shown below where $dH$ is the </span>
 </span><span id="L-276"><a href="#L-276"><span class="linenos">276</span></a><span class="sd">    change in enthalpy, $q&quot;$ is the defined heat flux, $S_i$ is the pipe&#39;s inner surface area, and $m_{dot}$ is the mass flow rate.  </span>
@@ -454,7 +454,7 @@ CryoToolBox<wbr>.heated_pipe    </h1>
 </span><span id="L-335"><a href="#L-335"><span class="linenos">335</span></a><span class="sd">    This function is used for systems with a constant pipe outer wall temperature. </span>
 </span><span id="L-336"><a href="#L-336"><span class="linenos">336</span></a><span class="sd">    The set-up is shown below in Figure # with the inputs highlighted. </span>
 </span><span id="L-337"><a href="#L-337"><span class="linenos">337</span></a><span class="sd">    &lt;div style=&quot;text-align: center;&quot;&gt;</span>
-</span><span id="L-338"><a href="#L-338"><span class="linenos">338</span></a><span class="sd">        &lt;img src=&quot;pipe_Tw_def.jpg&quot; alt=&quot;pipe_Tw_def&quot; width=&quot;400&quot; /&gt;   </span>
+</span><span id="L-338"><a href="#L-338"><span class="linenos">338</span></a><span class="sd">        &lt;img src=&quot;pipe_Tw_def.jpg&quot; alt=&quot;pipe_Tw_def&quot; width=&quot;600&quot; /&gt;   </span>
 </span><span id="L-339"><a href="#L-339"><span class="linenos">339</span></a><span class="sd">    &lt;/div&gt;         </span>
 </span><span id="L-340"><a href="#L-340"><span class="linenos">340</span></a><span class="sd">    The inner wall temperature is calculated in `find_Tw` from the average temperature which is initially assigned to a reference value.</span>
 </span><span id="L-341"><a href="#L-341"><span class="linenos">341</span></a><span class="sd">    The inner wall temperature is used in Equation # described in `pipe_Q_def` to calculate the change in enthalpy of the fluid.</span>
@@ -550,7 +550,7 @@ CryoToolBox<wbr>.heated_pipe    </h1>
 </span><span id="L-431"><a href="#L-431"><span class="linenos">431</span></a><span class="sd">    methods of heat transfer to be considered can be specified. This is computed and explained in `heated_pipe`.    </span>
 </span><span id="L-432"><a href="#L-432"><span class="linenos">432</span></a><span class="sd">    The set-up for this function is displayed below in Figure # with the input variables highlighted. </span>
 </span><span id="L-433"><a href="#L-433"><span class="linenos">433</span></a><span class="sd">    &lt;div style=&quot;text-align: center;&quot;&gt;</span>
-</span><span id="L-434"><a href="#L-434"><span class="linenos">434</span></a><span class="sd">        &lt;img src=&quot;pipe_h_ext.jpg&quot; alt=&quot;pipe_h_ext&quot; width=&quot;400&quot; /&gt;  </span>
+</span><span id="L-434"><a href="#L-434"><span class="linenos">434</span></a><span class="sd">        &lt;img src=&quot;pipe_h_ext.jpg&quot; alt=&quot;pipe_h_ext&quot; width=&quot;600&quot; /&gt;  </span>
 </span><span id="L-435"><a href="#L-435"><span class="linenos">435</span></a><span class="sd">    &lt;/div&gt;     </span>
 </span><span id="L-436"><a href="#L-436"><span class="linenos">436</span></a><span class="sd">    The outer wall temperature, $Tw_o$, is calculated in `find_Tw` from the average temperature, $T_{avg}$, which is initially assigned to a reference value.</span>
 </span><span id="L-437"><a href="#L-437"><span class="linenos">437</span></a><span class="sd">    The expression for the heat flux due to convection of the external fluid and the outer wall is defined below in Equation # where $h_{ext}$ is the external </span>
@@ -659,7 +659,7 @@ CryoToolBox<wbr>.heated_pipe    </h1>
 </span><span id="L-540"><a href="#L-540"><span class="linenos">540</span></a><span class="sd">    The external temperature of the insulation is assumed to be $293K$ if not specifically defined.   </span>
 </span><span id="L-541"><a href="#L-541"><span class="linenos">541</span></a><span class="sd">    The set-up of the function is shown below in Figure # where the variable inputs to the function are highlighted.</span>
 </span><span id="L-542"><a href="#L-542"><span class="linenos">542</span></a><span class="sd">    &lt;div style=&quot;text-align: center;&quot;&gt;</span>
-</span><span id="L-543"><a href="#L-543"><span class="linenos">543</span></a><span class="sd">        &lt;img src=&quot;pipe_insulated.jpg&quot; alt=&quot;pipe_insulated&quot; width=&quot;400&quot; /&gt;</span>
+</span><span id="L-543"><a href="#L-543"><span class="linenos">543</span></a><span class="sd">        &lt;img src=&quot;pipe_insulated.jpg&quot; alt=&quot;pipe_insulated&quot; width=&quot;600&quot; /&gt;</span>
 </span><span id="L-544"><a href="#L-544"><span class="linenos">544</span></a><span class="sd">    &lt;/div&gt;</span>
 </span><span id="L-545"><a href="#L-545"><span class="linenos">545</span></a><span class="sd">    The outer wall temperature, $Tw_o$, is calculated in `find_Tw` from the average temperature, $T_{avg}$ , which is initially assigned to a reference value.</span>
 </span><span id="L-546"><a href="#L-546"><span class="linenos">546</span></a><span class="sd">    The expression for the heat flux due to convection of the internal fluid and the inner wall is defined below in Equation # where $h_{ext}$ is the external </span>
@@ -1344,7 +1344,7 @@ Section 5.2.3 and 5.2.4 of Nellis and Klein (2020)</p>
 </span><span id="find_Tw-181"><a href="#find_Tw-181"><span class="linenos">181</span></a><span class="sd">    The system can either have a defined applied heat flux (`pipe_Q_def`), pipe outer wall temperature (`pipe_Tw_def`), </span>
 </span><span id="find_Tw-182"><a href="#find_Tw-182"><span class="linenos">182</span></a><span class="sd">    external fluid heat transfer coefficient (`pipe_h_ext`), or pipe insulation (`pipe_insulated`).  </span>
 </span><span id="find_Tw-183"><a href="#find_Tw-183"><span class="linenos">183</span></a><span class="sd">    &lt;div style=&quot;text-align: center;&quot;&gt;</span>
-</span><span id="find_Tw-184"><a href="#find_Tw-184"><span class="linenos">184</span></a><span class="sd">        &lt;img src=&quot;find_Tw.jpg&quot; alt=&quot;find_Tw&quot; width=&quot;400&quot; /&gt;</span>
+</span><span id="find_Tw-184"><a href="#find_Tw-184"><span class="linenos">184</span></a><span class="sd">        &lt;img src=&quot;find_Tw.jpg&quot; alt=&quot;find_Tw&quot; width=&quot;600&quot; /&gt;</span>
 </span><span id="find_Tw-185"><a href="#find_Tw-185"><span class="linenos">185</span></a><span class="sd">    &lt;/div&gt; </span>
 </span><span id="find_Tw-186"><a href="#find_Tw-186"><span class="linenos">186</span></a><span class="sd">    Depending on the inputs, either the inner or outer wall temperature is calculated. The heat flux, $q&quot;$ is calculated </span>
 </span><span id="find_Tw-187"><a href="#find_Tw-187"><span class="linenos">187</span></a><span class="sd">    from the general convection equation as a function of the unknown wall temperature shown below in Equation #. Here $h$ is the heat transfer</span>
@@ -1436,7 +1436,7 @@ The system can either have a defined applied heat flux (<code><a href="#pipe_Q_d
 external fluid heat transfer coefficient (<code><a href="#pipe_h_ext">pipe_h_ext</a></code>), or pipe insulation (<code><a href="#pipe_insulated">pipe_insulated</a></code>).  </p>
 
 <div style="text-align: center;">
-    <img src="find_Tw.jpg" alt="find_Tw" width="400" />
+    <img src="find_Tw.jpg" alt="find_Tw" width="600" />
 </div> 
 
 <p>Depending on the inputs, either the inner or outer wall temperature is calculated. The heat flux, $q"$ is calculated 
@@ -1508,7 +1508,7 @@ The minimize function is used to find the solution of the quadratic: the unknown
 </span><span id="pipe_Q_def-271"><a href="#pipe_Q_def-271"><span class="linenos">271</span></a><span class="sd">    ----------    </span>
 </span><span id="pipe_Q_def-272"><a href="#pipe_Q_def-272"><span class="linenos">272</span></a><span class="sd">    This function is used for systems with a defined constant heat flux. The set-up of the function is displayed below in Figure #. </span>
 </span><span id="pipe_Q_def-273"><a href="#pipe_Q_def-273"><span class="linenos">273</span></a><span class="sd">    &lt;div style=&quot;text-align: center;&quot;&gt;</span>
-</span><span id="pipe_Q_def-274"><a href="#pipe_Q_def-274"><span class="linenos">274</span></a><span class="sd">        &lt;img src=&quot;pipe_Q_def.jpg&quot; alt=&quot;pipe_Q_def&quot; width=&quot;400&quot; /&gt;  </span>
+</span><span id="pipe_Q_def-274"><a href="#pipe_Q_def-274"><span class="linenos">274</span></a><span class="sd">        &lt;img src=&quot;pipe_Q_def.jpg&quot; alt=&quot;pipe_Q_def&quot; width=&quot;550&quot; /&gt;  </span>
 </span><span id="pipe_Q_def-275"><a href="#pipe_Q_def-275"><span class="linenos">275</span></a><span class="sd">    &lt;/div&gt;     </span>
 </span><span id="pipe_Q_def-276"><a href="#pipe_Q_def-276"><span class="linenos">276</span></a><span class="sd">    The heat flux is used to calculate the fluid’s change of enthalpy. This is done using Equation # shown below where $dH$ is the </span>
 </span><span id="pipe_Q_def-277"><a href="#pipe_Q_def-277"><span class="linenos">277</span></a><span class="sd">    change in enthalpy, $q&quot;$ is the defined heat flux, $S_i$ is the pipe&#39;s inner surface area, and $m_{dot}$ is the mass flow rate.  </span>
@@ -1571,7 +1571,7 @@ The minimize function is used to find the solution of the quadratic: the unknown
 <p>This function is used for systems with a defined constant heat flux. The set-up of the function is displayed below in Figure #. </p>
 
 <div style="text-align: center;">
-    <img src="pipe_Q_def.jpg" alt="pipe_Q_def" width="400" />  
+    <img src="pipe_Q_def.jpg" alt="pipe_Q_def" width="550" />  
 </div>     
 
 <p>The heat flux is used to calculate the fluid’s change of enthalpy. This is done using Equation # shown below where $dH$ is the 
@@ -1627,7 +1627,7 @@ and $T_{avg}$ is the avaerage temperatue of the fluid. Finally, the outer wall t
 </span><span id="pipe_Tw_def-336"><a href="#pipe_Tw_def-336"><span class="linenos">336</span></a><span class="sd">    This function is used for systems with a constant pipe outer wall temperature. </span>
 </span><span id="pipe_Tw_def-337"><a href="#pipe_Tw_def-337"><span class="linenos">337</span></a><span class="sd">    The set-up is shown below in Figure # with the inputs highlighted. </span>
 </span><span id="pipe_Tw_def-338"><a href="#pipe_Tw_def-338"><span class="linenos">338</span></a><span class="sd">    &lt;div style=&quot;text-align: center;&quot;&gt;</span>
-</span><span id="pipe_Tw_def-339"><a href="#pipe_Tw_def-339"><span class="linenos">339</span></a><span class="sd">        &lt;img src=&quot;pipe_Tw_def.jpg&quot; alt=&quot;pipe_Tw_def&quot; width=&quot;400&quot; /&gt;   </span>
+</span><span id="pipe_Tw_def-339"><a href="#pipe_Tw_def-339"><span class="linenos">339</span></a><span class="sd">        &lt;img src=&quot;pipe_Tw_def.jpg&quot; alt=&quot;pipe_Tw_def&quot; width=&quot;600&quot; /&gt;   </span>
 </span><span id="pipe_Tw_def-340"><a href="#pipe_Tw_def-340"><span class="linenos">340</span></a><span class="sd">    &lt;/div&gt;         </span>
 </span><span id="pipe_Tw_def-341"><a href="#pipe_Tw_def-341"><span class="linenos">341</span></a><span class="sd">    The inner wall temperature is calculated in `find_Tw` from the average temperature which is initially assigned to a reference value.</span>
 </span><span id="pipe_Tw_def-342"><a href="#pipe_Tw_def-342"><span class="linenos">342</span></a><span class="sd">    The inner wall temperature is used in Equation # described in `pipe_Q_def` to calculate the change in enthalpy of the fluid.</span>
@@ -1722,7 +1722,7 @@ and $T_{avg}$ is the avaerage temperatue of the fluid. Finally, the outer wall t
 The set-up is shown below in Figure # with the inputs highlighted. </p>
 
 <div style="text-align: center;">
-    <img src="pipe_Tw_def.jpg" alt="pipe_Tw_def" width="400" />   
+    <img src="pipe_Tw_def.jpg" alt="pipe_Tw_def" width="600" />   
 </div>         
 
 <p>The inner wall temperature is calculated in <code><a href="#find_Tw">find_Tw</a></code> from the average temperature which is initially assigned to a reference value.
@@ -1785,7 +1785,7 @@ $$q” = -h_T * (T_{avg}-Tw_i) $$ </p>
 </span><span id="pipe_h_ext-432"><a href="#pipe_h_ext-432"><span class="linenos">432</span></a><span class="sd">    methods of heat transfer to be considered can be specified. This is computed and explained in `heated_pipe`.    </span>
 </span><span id="pipe_h_ext-433"><a href="#pipe_h_ext-433"><span class="linenos">433</span></a><span class="sd">    The set-up for this function is displayed below in Figure # with the input variables highlighted. </span>
 </span><span id="pipe_h_ext-434"><a href="#pipe_h_ext-434"><span class="linenos">434</span></a><span class="sd">    &lt;div style=&quot;text-align: center;&quot;&gt;</span>
-</span><span id="pipe_h_ext-435"><a href="#pipe_h_ext-435"><span class="linenos">435</span></a><span class="sd">        &lt;img src=&quot;pipe_h_ext.jpg&quot; alt=&quot;pipe_h_ext&quot; width=&quot;400&quot; /&gt;  </span>
+</span><span id="pipe_h_ext-435"><a href="#pipe_h_ext-435"><span class="linenos">435</span></a><span class="sd">        &lt;img src=&quot;pipe_h_ext.jpg&quot; alt=&quot;pipe_h_ext&quot; width=&quot;600&quot; /&gt;  </span>
 </span><span id="pipe_h_ext-436"><a href="#pipe_h_ext-436"><span class="linenos">436</span></a><span class="sd">    &lt;/div&gt;     </span>
 </span><span id="pipe_h_ext-437"><a href="#pipe_h_ext-437"><span class="linenos">437</span></a><span class="sd">    The outer wall temperature, $Tw_o$, is calculated in `find_Tw` from the average temperature, $T_{avg}$, which is initially assigned to a reference value.</span>
 </span><span id="pipe_h_ext-438"><a href="#pipe_h_ext-438"><span class="linenos">438</span></a><span class="sd">    The expression for the heat flux due to convection of the external fluid and the outer wall is defined below in Equation # where $h_{ext}$ is the external </span>
@@ -1895,7 +1895,7 @@ methods of heat transfer to be considered can be specified. This is computed and
 The set-up for this function is displayed below in Figure # with the input variables highlighted. </p>
 
 <div style="text-align: center;">
-    <img src="pipe_h_ext.jpg" alt="pipe_h_ext" width="400" />  
+    <img src="pipe_h_ext.jpg" alt="pipe_h_ext" width="600" />  
 </div>     
 
 <p>The outer wall temperature, $Tw_o$, is calculated in <code><a href="#find_Tw">find_Tw</a></code> from the average temperature, $T_{avg}$, which is initially assigned to a reference value.
@@ -1969,7 +1969,7 @@ Once $T_{avg}$ is known, the heat flux is calculated from Equation #.</p>
 </span><span id="pipe_insulated-541"><a href="#pipe_insulated-541"><span class="linenos">541</span></a><span class="sd">    The external temperature of the insulation is assumed to be $293K$ if not specifically defined.   </span>
 </span><span id="pipe_insulated-542"><a href="#pipe_insulated-542"><span class="linenos">542</span></a><span class="sd">    The set-up of the function is shown below in Figure # where the variable inputs to the function are highlighted.</span>
 </span><span id="pipe_insulated-543"><a href="#pipe_insulated-543"><span class="linenos">543</span></a><span class="sd">    &lt;div style=&quot;text-align: center;&quot;&gt;</span>
-</span><span id="pipe_insulated-544"><a href="#pipe_insulated-544"><span class="linenos">544</span></a><span class="sd">        &lt;img src=&quot;pipe_insulated.jpg&quot; alt=&quot;pipe_insulated&quot; width=&quot;400&quot; /&gt;</span>
+</span><span id="pipe_insulated-544"><a href="#pipe_insulated-544"><span class="linenos">544</span></a><span class="sd">        &lt;img src=&quot;pipe_insulated.jpg&quot; alt=&quot;pipe_insulated&quot; width=&quot;600&quot; /&gt;</span>
 </span><span id="pipe_insulated-545"><a href="#pipe_insulated-545"><span class="linenos">545</span></a><span class="sd">    &lt;/div&gt;</span>
 </span><span id="pipe_insulated-546"><a href="#pipe_insulated-546"><span class="linenos">546</span></a><span class="sd">    The outer wall temperature, $Tw_o$, is calculated in `find_Tw` from the average temperature, $T_{avg}$ , which is initially assigned to a reference value.</span>
 </span><span id="pipe_insulated-547"><a href="#pipe_insulated-547"><span class="linenos">547</span></a><span class="sd">    The expression for the heat flux due to convection of the internal fluid and the inner wall is defined below in Equation # where $h_{ext}$ is the external </span>
@@ -2067,7 +2067,7 @@ The external temperature of the insulation is assumed to be $293K$ if not specif
 The set-up of the function is shown below in Figure # where the variable inputs to the function are highlighted.</p>
 
 <div style="text-align: center;">
-    <img src="pipe_insulated.jpg" alt="pipe_insulated" width="400" />
+    <img src="pipe_insulated.jpg" alt="pipe_insulated" width="600" />
 </div>
 
 <p>The outer wall temperature, $Tw_o$, is calculated in <code><a href="#find_Tw">find_Tw</a></code> from the average temperature, $T_{avg}$ , which is initially assigned to a reference value.
