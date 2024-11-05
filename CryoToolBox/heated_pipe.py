@@ -12,6 +12,15 @@ from .cp_wrapper import ThermState
 from .piping import Mach, Mach_total, K_lim, ChokedFlow, HydraulicError, velocity, dP_Darcy, dP_adiab, Pipe, Tube, CopperTube
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
+import CryoToolBox as ht
+import pandas as pd
+
+refprop_data = pd.read_csv(r'C:\Users\rbeckwit\Documents\Python Scripts\Heated_pipe\Heated_pipe_part2\refprop_data.txt', sep ='\s+', engine = 'python')
+
+rp_temp = refprop_data['Temperature']
+rp_density = refprop_data['Density']
+rp_enthalpy = refprop_data['Enthalpy']
 
 # #Tell pdoc not to include in documentation
 # __pdoc__ = {
@@ -565,8 +574,6 @@ def pipe_insulated(fluid, pipe, m_dot, dP, h_T):
         | inlet fluid conditions   
     `fluid_out` : Thermstate
         | outlet fluid conditions   
-    `h_ext` : Quantity : {mass : 1, temperature : -1, time : -3}
-        | transfer coefficient of external fluid  
     `m_dot` : Quantity { mass: 1, time: -1}
         | mass flow rate           
     `pipe` : Pipe
@@ -803,7 +810,7 @@ def k_pipe(pipe, T_wall, T_ext = 293 * ureg.K):     ### you should add the possi
    
 #     return h.to(ureg.W / ureg.K / ureg.m ** 2)
 
-def h_ext_(fluid, pipe, T_wall, considerations=None): ### you should add the possibility to define a table of values to do that
+def h_ext_(fluid, pipe, T_wall, considerations=None, humidity=0.5): ### you should add the possibility to define a table of values to do that
     """This function determines the heat transfer coefficient of the external fluid surrounding the pipe.    
     If an external heat transfer coefficient is not defined, then it is calculted assuming an external fluid of air at 293 K and 1 bar. 
     Specific heat transfer conditions can be specified in the variable pipe.considerations. 
@@ -863,10 +870,15 @@ def h_ext_(fluid, pipe, T_wall, considerations=None): ### you should add the pos
                 Nu_ = Nu_hcyl(Pr_, Ra_)
             else:
                 #Use maximum Nusselt if orientation is not defined
+                Pr_ = max(Pr_, 0.7)  # Set a lower bound for Prandtl number ##Rosalyn- added Prandlt minimum value to fit within interpolation range
                 Nu_ = max (Nu_vcyl(Pr_, Ra_, pipe.OD, pipe.L), Nu_hcyl(Pr_, Ra_))
             
             #Calculate heat transfer coefficient of external fluid
-            h = heat_trans_coef(fluid, Nu_, pipe.OD)
+            h_conv = heat_trans_coef(fluid, Nu_, pipe.OD)
+            print(' ')
+            print('conv')
+            print(h_conv)
+            h = h_conv
 
         if 'radiation' in considerations:  #radiation considered
             
@@ -882,12 +894,117 @@ def h_ext_(fluid, pipe, T_wall, considerations=None): ### you should add the pos
             h_rad = epsilon * sigma * (fluid.T ** 4 - T_wall ** 4) / (fluid.T - T_wall) 
             
             #Calculate total heat transfer coefficient 
+            print(' ')
+            print('rad')
+            print(h_rad)
             h = h + h_rad
 
         if 'icing' in considerations: ###including Rad ice and h_ice specific in the problem: to do 
-            print('to do')
-        
+            print(' ')    
+            print(T_wall)
+            
+            # Define Reference External Fluid at Film Temp
+            T_film = (fluid.T + T_wall )/ 2 
+            fluid_film = fluid.copy() 
+            fluid_film.update('P', fluid.P ,'T', T_film)
+            print(T_film)
+            
+            # Mass Transport Considerations
+            mass_transport = 0.225*((T_film.m_as(ureg.K)/273.15)**1.8)/10000*ureg.m**2/ureg.s ### Equation from Erik's slides and found in references ___ #Rosalyn enter references
+
+            #Calculate Fluid Properties for Film Temp Fluid
+            vis = 0.00001716 *((T_film.m_as(ureg.K)/273.15)**(3/2))*((273.15+110.4)/(T_film.m_as(ureg.K)+110.4)) *(ureg.kg/ureg.s/ureg.m) ### Empirical Formula for viscosity- works only for air
+            Sc_f = vis /(mass_transport * fluid_film.Dmass) #calculated differently than excel sheet: density is slightly different
+            Pr_f = Pr(fluid_film) #calculated differently than excel sheet
+
+            # Lewis number and relationship combining mass and heat transfer properties
+            Le_ = Sc_f/Pr_f 
+            lewis_rel = Le_**(-2/3)/(fluid_film.Dmass*fluid_film.Cpmass) 
+
+            # Concentration calculations: surrounding air must have higher concentration than at the pipe surface for condensation to occur
+            # use reference function fluid_interp to interpolate from enthalpy and density values from REFPROP
+            surface_concen = interp_density(T_wall)
+     
+            # use reference water fluid to calculate concentration and enthalpy of water vapor in air
+            fluid_vapor = ThermState('water', P= fluid.P , T=fluid.T)
+            air_vapor_concen = (2340*ureg.Pa *humidity*fluid_vapor.molar_mass)/(fluid_vapor.gas_constant*fluid_vapor.T) #ideal gas law- sublimation pressure calculated in ctb? 
+            concentration_grad = air_vapor_concen - surface_concen
+            
+            # enthalpy calculations: interpolate from REFPROP values
+            surface_enthalpy = interp_enthalpy(T_wall)
+            vapor_enthalpy = interp_enthalpy(fluid.T)
+            
+            # add latent heat of sublimation to delta_H if going from ice to vapor
+            if T_wall < 294 *ureg.K:
+                latent_heat = 2830 *ureg.kJ/ureg.kg
+                delta_H =  vapor_enthalpy - surface_enthalpy + latent_heat
+            else:
+                delta_H = vapor_enthalpy - surface_enthalpy
+            
+            # calculate the mass flux of condensation
+            mass_flux = concentration_grad * lewis_rel * h_conv 
+    
+            # Standard heat transfer equations to calculate heat flux and coefficient - add assumptions/derivations?
+            q_icing = mass_flux*delta_H
+            h_icing = q_icing/(fluid.T-T_wall)
+            
+            # update heat transfer coeff value
+            h = h + h_icing
+            
         if h == 0:
             raise ValueError("The calculated heat transfer coefficient is zero, indicating invalid or missing considerations.")
 
     return h.to(ureg.W / ureg.K / ureg.m ** 2)
+
+
+def interp_density(temp):
+    interp =  interp1d(rp_temp, rp_density, kind = 'linear' , fill_value = "extrapolate")     
+    density_value = interp(temp)*ureg.kg/(ureg.m**3)
+    return density_value
+    
+def interp_enthalpy(temp): 
+    interp =  interp1d(rp_temp, rp_enthalpy, kind = 'linear' , fill_value = "extrapolate")     
+    enthalpy_value = interp(temp)*ureg.kJ/ureg.kg     
+    return enthalpy_value
+     
+
+def test_function_icing():
+    #### Parameters
+    OD = Q_('8 inch')
+    pipe = ht.piping.Pipe(OD, SCH=10, L=5*ureg.m, eps=0.000045*ureg.m)  # NPS pipe class
+    # m_dot = Q_('50 g/s')  # Mass flow
+    fluid = ht.ThermState('helium', T=100*ureg.K, P=1*ureg.bar)  # Fluid state
+    pipe.epsilon = 0.96  # for steel < 273 K
+    considerations = ('convection', 'radiation', 'icing')
+    
+    # Create a range of wall temperatures, similar to T_ext in the previous example
+    T_wall_values = np.linspace(93, 293, 200) * ureg.K  # Range from 0 to 293 K
+    heat_transfer_coefficients = []  # List to store the calculated heat transfer coefficients
+
+    # Loop over each T_wall value
+    for T_wall in T_wall_values:
+        # Call a function to calculate heat transfer coefficient
+        h = h_ext_(fluid, pipe, T_wall, considerations)  
+        
+        # Store the result
+        heat_transfer_coefficients.append(h)
+
+    # Return both the temperature values and their corresponding heat transfer coefficients
+    return T_wall_values, heat_transfer_coefficients
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

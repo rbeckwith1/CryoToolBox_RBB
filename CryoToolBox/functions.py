@@ -436,7 +436,6 @@ def C_t_bar_cyl(Pr_):
     C_t_bar_interp = interp1d(Pr_values, C_t_bar_values)
     return C_t_bar_interp(Pr_)
 
-
 def Nu_hcyl(Pr_, Ra_):
     """Calculate Nusselt number for isothermal horizontal cylinder.
     Only natural convection currently supported.

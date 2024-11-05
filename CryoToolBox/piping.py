@@ -508,7 +508,7 @@ class Elbow(Tube):
         self.R_D = R_D
         self.N = N
         self.angle = angle
-        super().__init__(OD, wall, L=0*ureg.m, c=c, eps = eps)
+        super().__init__(OD, wall, L=0*ureg.m, c=c, eps = eps) # update: add eps 
         self.L = R_D*self.ID*angle
         self.type = 'Tube elbow'
 
@@ -960,9 +960,9 @@ def K_piping(m_dot, fluid, piping):
     """
 
     K0 = 0*ureg.dimensionless
-
-#if not isinstance(piping, list) *Rosalyn: fixed the error with entering a piping value as something other than a list 
-    #piping = [piping]
+    
+    if not isinstance(piping, list): #*Rosalyn: fixed the error with entering a piping value as something other than a list 
+        piping = [piping]
     
     try:
         A0 = piping[0].area  # using area of the first element as base
@@ -1001,8 +1001,8 @@ def dP_incomp(m_dot, fluid, piping):
     P_0 = fluid.P
     T_0 = fluid.T
     rho_0 = fluid.Dmass
-    if not isinstance(piping,list):
-        piping = [piping]    
+    # if not isinstance(piping,list): # Update: if piping is not a list- now done in K_piping
+    #     piping = [piping]    
     K, area = K_piping(m_dot, fluid, piping)
     w = m_dot / (rho_0*area)
     return dP_Darcy(K, rho_0, w)
@@ -1106,15 +1106,27 @@ def dP_isot(m_dot, fluid, pipe, tol=1e-6):
     K = pipe.K(Re(fluid, m_dot, pipe.ID, pipe.area))
     P2 = P1
     converged = False
+    i = 0
+
     while not converged:
-        sq_diff = m_dot**2*R*T/A**2 * (2*log(P1/P2)+K)
+        sq_diff = m_dot**2 * R * T / A**2 * (2 * log(P1 / P2) + K)
         P2_new = (P1**2 - sq_diff)**0.5
-        converged = abs(P2_new-P2)/P2_new
+        i = i+1
+
+        # Check for convergence
+        if abs(P2_new - P2) / P2_new < tol or i == 10:
+            converged = True
         P2 = P2_new
-        v = m_dot / (fluid.Dmass*A)
-        if Mach(fluid, v) > 1/(fluid.gamma):
-            raise ChokedFlow('K needs to be reduced to reach P2={P2:.3g~}')
-    return P1 - P2
+        
+        # Calculate velocity
+        v = m_dot / (fluid.Dmass * A)
+        
+        # Check for choked flow
+        if Mach(fluid, v) > 1 / fluid.gamma:
+            raise ChokedFlow(f'K needs to be reduced to reach P2={P2:.3g}')
+            
+    # Return the pressure difference    
+    return P1 - P2 
 
 
 def Mach(fluid, v):
