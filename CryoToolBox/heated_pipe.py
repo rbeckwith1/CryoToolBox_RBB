@@ -363,6 +363,7 @@ def find_Twall(x, T_avg, pipe, h_coeff, m_dot, condition): #add parameter condit
     else:
         raise ValueError("Insufficient or invalid parameters provided.")                
     
+    print(T_avg)
     k = k_(pipe, Tw_o, Tw_i)
     Q_cond = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (Tw_o - Tw_i))
     Q_conv = -h_coeff * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14  
@@ -992,17 +993,17 @@ def h_external_(fluid, pipe, T_wall, considerations=None, humidity=0.5): ### you
 
         if 'icing' in considerations:
             """Uses the Lewis number and relationship to calculate the heat transfer and mass transfer relationship. Function neglects the ice thickness and assumes constant state in which the ice is about to condense. 
-            Considers the worst case situation in which cold environment without the effects of insulation an ice layer would produce. 
+            Considers the worst case situation: neglects insulation an ice layer would produce. 
             """
 
             # Mass Transport Considerations
-            mass_transport = 0.225*((T_film.m_as(ureg.K)/273.15)**1.8)/10000*ureg.m**2/ureg.s ### Equation from Erik's slides and found in references ___ #Rosalyn enter references
+            mass_transport = 0.225*((T_film.m_as(ureg.K)/273.15)**1.8)/10000*ureg.m**2/ureg.s ### Equation from Erik's slides and found in references ___ 
             
             #Calculate Fluid Properties using the Film Temp 
             vis = 0.00001716 *((T_film.m_as(ureg.K)/273.15)**(3/2))*((273.15+110.4)/(T_film.m_as(ureg.K)+110.4)) *(ureg.kg/ureg.s/ureg.m) ### Sutherland's Formula to calculate viscosity of air
-            Sc_ = vis /(mass_transport * fluid_film.Dmass) 
+            Sc_ = vis /(mass_transport * fluid_film.Dmass) # Schmidt number
             
-            # Lewis number and Lewis relationship combining mass and heat transfer properties
+            # Lewis number and Lewis relationship correlating mass and heat transfer properties
             Le_ = Sc_/Pr_ 
             lewis_rel = Le_**(-2/3)/(fluid_film.Dmass*fluid_film.Cpmass) 
             
@@ -1011,12 +1012,12 @@ def h_external_(fluid, pipe, T_wall, considerations=None, humidity=0.5): ### you
             air_vapor_concen = interp_density(fluid.T)*humidity
             concentration_grad = air_vapor_concen - surface_concen
             
-            # enthalpy calculations: interpolate from REFPROP values
+            
             surface_enthalpy = interp_enthalpy(T_wall)
             vapor_enthalpy = interp_enthalpy(fluid.T)
             delta_H = vapor_enthalpy - surface_enthalpy 
             
-            # Standard heat transfer equations to calculate heat flux and coefficient - add assumptions/derivations?
+            # Standard heat transfer equations to calculate heat flux and coefficient 
             mass_flux = concentration_grad * lewis_rel * h_conv 
             q_icing = mass_flux*delta_H
             h_icing = q_icing/(fluid.T-T_wall)
