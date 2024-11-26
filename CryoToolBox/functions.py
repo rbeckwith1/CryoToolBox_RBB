@@ -348,6 +348,52 @@ def Ra(fluid, T_surf, L_surf):
     """
     return Gr(fluid, T_surf, L_surf)*fluid.Prandtl
 
+def Gr_update(fluid, T_surf, L_surf):
+    """
+    Calculate Grashof number.
+
+    Parameters
+    ----------
+    fluid : ThermState object describing thermodynamic state (fluid, T, P)
+    T_surf : surface temperature
+    L_surf : characteristic length
+
+    Returns
+    -------
+    Grashof number, dimensionless
+    """
+    # Film temperature for fluid properties
+    T_film = (fluid.T + T_surf )/ 2 
+    fluid_film = fluid.copy() 
+    fluid_film.update('P', fluid.P ,'T', T_film)
+    
+    nu_fluid = fluid_film.viscosity/fluid_film.Dmass  # kinematic viscosity
+    beta_exp = fluid_film.isobaric_expansion_coefficient
+    
+    Gr_ = ureg.g_0 * L_surf**3 * beta_exp * abs(T_surf-fluid.T) / nu_fluid**2    
+    return float(Gr_)
+
+
+def Ra_update(fluid, T_surf, L_surf):
+    """
+    Calculate Rayleigh number.
+
+    Parameters
+    ----------
+    fluid : ThermState object describing thermodynamic state (fluid, T, P)
+    T_surf : surface temperature
+    L_surf : characteristic length
+
+    Returns
+    -------
+    Rayleigh number, dimensionless
+    """
+    T_film = (fluid.T + T_surf )/ 2 
+    fluid_film = fluid.copy() 
+    fluid_film.update('P', fluid.P ,'T', T_film)
+    
+    return Gr_update(fluid, T_surf, L_surf)*fluid_film.Prandtl
+
 
 def Nu_blend(Nu_lam, Nu_turb, m):
     """Calculate Nu number using blending equation of Churchill and Usagi.
