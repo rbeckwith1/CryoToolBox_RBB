@@ -363,7 +363,6 @@ def find_Twall(x, T_avg, pipe, h_coeff, m_dot, condition): #add parameter condit
     else:
         raise ValueError("Insufficient or invalid parameters provided.")                
     
-    print(T_avg)
     k = k_(pipe, Tw_o, Tw_i)
     Q_cond = conduction_cyl(pipe.ID.to(ureg.m), pipe.OD.to(ureg.m), pipe.L.to(ureg.m), k, (Tw_o - Tw_i))
     Q_conv = -h_coeff * (T_avg - Tw_i) * pipe.ID.to(ureg.m) * pipe.L.to(ureg.m) * 3.14  
