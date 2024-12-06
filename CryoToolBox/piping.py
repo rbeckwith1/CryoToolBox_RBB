@@ -997,10 +997,8 @@ class ParallelPlateRelief:
 
 # Supporting functions used for flow rate and pressure drop calculations.
 def f_Darcy(Re_, eps_r, L_ID, method='churchill'):
-    """Calculate Darcy friction factor using Serghide solution to
-    Colebrook equation.
-
-    See Crane TP-410 2013, equation 6-6.
+    """Calculate Darcy friction factor using Churchill, Serghide, or Nellis and Klein
+    solution to the Colebrook equation.
 
     Parameters
     ----------

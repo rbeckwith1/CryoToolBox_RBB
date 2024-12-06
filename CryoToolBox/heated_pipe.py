@@ -30,7 +30,7 @@ rp_temp = refprop_data['Temperature']
 rp_density = refprop_data['Density']
 rp_enthalpy = refprop_data['Enthalpy']
 
-class pipe_isolation:
+class pipe_properties:
     """
     Class to define the necessary isolation inputs.
     """
@@ -39,70 +39,70 @@ class pipe_isolation:
         self.OD = OD
         self.T_ext = T_ext
       
-def laminar_flow_properties(Re_, Pr_, L_ID):
-    """
-    Non dimentional calculation of the Nusselt and fiction factor in pipe in laminar flow  
-    Section 5.2.4 of Nellis and Klein (2020)
-    """
-    # Verify the input conditions     
-    if Pr_ < 0.1:
-        raise ValueError(f'Prandtl number (Pr) must be > 0.1. The value is {Pr}')
+# def laminar_flow_properties(Re_, Pr_, L_ID):
+#     """
+#     Non dimentional calculation of the Nusselt and fiction factor in pipe in laminar flow  
+#     Section 5.2.4 of Nellis and Klein (2020)
+#     """
+#     # Verify the input conditions     
+#     if Pr_ < 0.1:
+#         raise ValueError(f'Prandtl number (Pr) must be > 0.1. The value is {Pr}')
         
-    # Calculate and verify Graetz number and Inverse Graetz number
-    SGZ = L_ID / Re_
-    GZ = L_ID / (Re_ * Pr_)
-    if GZ < 1e-6:
-        raise ValueError(f'Inverse Graetz number (GZ) must be > 1e-6. The value is {GZ}')
+#     # Calculate and verify Graetz number and Inverse Graetz number
+#     SGZ = L_ID / Re_
+#     GZ = L_ID / (Re_ * Pr_)
+#     if GZ < 1e-6:
+#         raise ValueError(f'Inverse Graetz number (GZ) must be > 1e-6. The value is {GZ}')
          
-    # Calculate friction factor
-    f = 4 * (3.44 / sqrt(SGZ) + (1.25 / (4 * SGZ) + 16 - 3.44 / sqrt(SGZ)) / (1 + 0.00021 * SGZ**(-2))) / Re_
+#     # Calculate friction factor
+#     f = 4 * (3.44 / sqrt(SGZ) + (1.25 / (4 * SGZ) + 16 - 3.44 / sqrt(SGZ)) / (1 + 0.00021 * SGZ**(-2))) / Re_
     
-    # Calculate Nusselt numbers: temperature constant and flux constant conditions
-    Nu_T = ((5.001 / GZ**1.119 + 136.0)**0.2978 - 0.6628) / tanh(2.444 * SGZ**(1 / 6) * (1 + 0.565 * SGZ**(1 / 3)))
-    Nu_Q = ((6.562 / GZ**1.137 + 220.4)**0.2932 - 0.5003) / tanh(2.530 * SGZ**(1 / 6) * (1 + 0.639 * SGZ**(1 / 3)))
+#     # Calculate Nusselt numbers: temperature constant and flux constant conditions
+#     Nu_T = ((5.001 / GZ**1.119 + 136.0)**0.2978 - 0.6628) / tanh(2.444 * SGZ**(1 / 6) * (1 + 0.565 * SGZ**(1 / 3)))
+#     Nu_Q = ((6.562 / GZ**1.137 + 220.4)**0.2932 - 0.5003) / tanh(2.530 * SGZ**(1 / 6) * (1 + 0.639 * SGZ**(1 / 3)))
     
-    return Nu_T, Nu_Q, f
+#     return Nu_T, Nu_Q, f
 
-def turbulent_flow_properties(Re_, Pr_, L_ID, eps):
-    """
-    Non dimentional calculations of the Nusselt and fiction factor in pipe in turbulent flow following Section 5.2.3 of Nellis and Klein (2020)
-    """
+# def turbulent_flow_properties(Re_, Pr_, L_ID, eps):
+#     """
+#     Non dimentional calculations of the Nusselt and fiction factor in pipe in turbulent flow following Section 5.2.3 of Nellis and Klein (2020)
+#     """
     
-    # Verify input conditions
-    if Pr_ < 0.004 or Pr_ > 2000:
-        raise ValueError(f'Prandtl number (Pr) must be between 0.004 and 2000. The value is {Pr}')
-    if L_ID <= 1:  
-        if L_ID < 0:  ###not inferior to zero - make no sense
-            raise ValueError('L/ID ratio < 0. Not possible')
-        print('L/ID ratio should be > 1. The value is {L_ID}')
-        L_ID = 1
+#     # Verify input conditions
+#     if Pr_ < 0.004 or Pr_ > 2000:
+#         raise ValueError(f'Prandtl number (Pr) must be between 0.004 and 2000. The value is {Pr}')
+#     if L_ID <= 1:  
+#         if L_ID < 0:  ###not inferior to zero - make no sense
+#             raise ValueError('L/ID ratio < 0. Not possible')
+#         print('L/ID ratio should be > 1. The value is {L_ID}')
+#         L_ID = 1
         
-    # Calculate friction Factor 
-    if eps > 1e-5:
-        #Offor & Alabi, Advances in Chemical Engineering and Science, 2016
-        friction = (-2 * log10(eps / 3.71 - 1.975 / Re_ * log((eps / 3.93)**1.092 + 7.627 / (Re_ + 395.9))))**(-2)
-    else:
-        #Li & Seem correlation, A New Explicity Equation for Accurate Friction Factor Calculation for Smooth Tubes, 2011
-        friction = (-0.001570232 / log(Re_) + 0.394203137 / log(Re_)**2 + 2.534153311 / log(Re_)**3) * 4
+#     # Calculate friction Factor 
+#     if eps > 1e-5:
+#         #Offor & Alabi, Advances in Chemical Engineering and Science, 2016
+#         friction = (-2 * log10(eps / 3.71 - 1.975 / Re_ * log((eps / 3.93)**1.092 + 7.627 / (Re_ + 395.9))))**(-2)
+#     else:
+#         #Li & Seem correlation, A New Explicity Equation for Accurate Friction Factor Calculation for Smooth Tubes, 2011
+#         friction = (-0.001570232 / log(Re_) + 0.394203137 / log(Re_)**2 + 2.534153311 / log(Re_)**3) * 4
         
-    # Nusselt, Gnielinski, Int. Chem. Eng., 1976
-    Nusselt = ((friction / 8) * (Re_ - 1000) * Pr_) / (1 + 12.7 * sqrt(friction / 8) * (Pr_**(2 / 3) - 1))
+#     # Nusselt, Gnielinski, Int. Chem. Eng., 1976
+#     Nusselt = ((friction / 8) * (Re_ - 1000) * Pr_) / (1 + 12.7 * sqrt(friction / 8) * (Pr_**(2 / 3) - 1))
     
-    # Correct Nusselt number for low Prandtl numbers, Notter & Sleicher, Chem. Eng. Sci., 1972
-    if Pr_ < 0.5:
-        Nusselt_lp = 4.8 + 0.0156 * Re_ ** 0.85 * Pr_ ** 0.93
-        if Pr_ < 0.1:
-            Nusselt = Nusselt_lp
-        else:
-            Nusselt = Nusselt_lp + (Pr_ - 0.1) * (Nusselt - Nusselt_lp) / 0.4   
+#     # Correct Nusselt number for low Prandtl numbers, Notter & Sleicher, Chem. Eng. Sci., 1972
+#     if Pr_ < 0.5:
+#         Nusselt_lp = 4.8 + 0.0156 * Re_ ** 0.85 * Pr_ ** 0.93
+#         if Pr_ < 0.1:
+#             Nusselt = Nusselt_lp
+#         else:
+#             Nusselt = Nusselt_lp + (Pr_ - 0.1) * (Nusselt - Nusselt_lp) / 0.4   
             
-    # Apply developing flow correction for friction factor and Nusselt 
-    f = friction * (1 + (1 / L_ID)**0.7)
-    Nu = Nusselt * (1 + (1 / L_ID)**0.7)
+#     # Apply developing flow correction for friction factor and Nusselt 
+#     f = friction * (1 + (1 / L_ID)**0.7)
+#     Nu = Nusselt * (1 + (1 / L_ID)**0.7)
     
-    return Nu, f
+#     return Nu, f
  
-    # Seperate friction factor and Nusselt calculations:
+### Seperate friction factor and Nusselt calculations:
 def Nusselt_laminar(Re_, Pr_, L_ID):
     """
     Non dimentional calculation of the Nusselt in pipe in laminar flow  
@@ -178,10 +178,12 @@ def Nusselt(f, Re_, Pr_, L_ID):
 
     return Nu_T, Nu_Q
 
-def h_(m_dot, fluid, pipe):
+def heat_trans_coef_surface(m_dot, fluid, pipe):
     """
-    Calculate the heat transfer at the surface of the pipe.   
-    Using the pipe friction factor and section 5.2 and 5.2 of Nellis and Klein (2020)
+    Integrates the functions `Nusselt` and   `heat_trans_coef`  for convenient 
+    method to calculate the convective heat transfer coefficient at the surface of the pipe.
+    Section 5.2 and 5.2 of Nellis and Klein (2020)
+    
     Parameters
     ----------
     `fluid` : ThermState | Inlet fluid conditions   
@@ -195,89 +197,23 @@ def h_(m_dot, fluid, pipe):
      -------
     """
 
-    # Calculate fluid pameters
+    # Calculate pipe and flow conditions
     Re_ = Re(fluid, m_dot, pipe.ID, pipe.area)
     L_ID = pipe.L.m_as(ureg.m)/pipe.ID.m_as(ureg.m)
     Pr_ = fluid.Prandtl
 
-    # Calculate pressure drop
+    # Calculate friction factor and Nusselt numbers
     f = (pipe.K(Re_)/L_ID)
-
     Nu_T, Nu_Q = Nusselt(f.to_base_units().magnitude, Re_, Pr_, L_ID)
         
-    # Calculate heat transfer coefficient: temperature and heat flux constant 
+    # Calculate heat transfer coefficients: temperature and heat flux constant conditions
     h_T = heat_trans_coef(fluid, Nu_T, pipe.ID)
     h_Q = heat_trans_coef(fluid, Nu_Q, pipe.ID)
     
     return h_T, h_Q
 
-# def dP_Pipe(m_dot, fluid, pipe):
-#     """
-#     Calculate pressure drop for flow with heat transfer at the surface of the pipe.   
-#     Section 5.2.3 and 5.2.4 of Nellis and Klein (2020)
-#     Parameters
-#     ----------
-#     `fluid` : ThermState | Inlet fluid conditions   
-#     `m_dot` : Quantity {mass: 1, time: -1} | mass flow rate     
-#     `pipe` : Pipe | defines the pipe characteristics 
-    
-#     Returns
-#     -------
-#     `dP`: Quantity {length: -1, mass: 1, time: -2} | Pressure drop   
-#     `h_T`, `h_Q`: Quantity: {mass : 1, temperature : -1, time : -3}
-#          | Heat transfer coefficients
-#      -------
-#     """
 
-#     # Calculate fluid pameters
-#     Re_ = Re(fluid, m_dot, pipe.ID, pipe.area)
-#     L_ID = pipe.L.m_as(ureg.m)/pipe.ID.m_as(ureg.m)
-#     eps = (pipe.eps/pipe.ID)
-#     w = velocity(fluid, m_dot, pipe.area)
-#     Pr = fluid.Prandtl
-    
-#     #Verify two phase flow and Chockedflow
-#     if (fluid.phase == 0 or fluid.phase == 6) and fluid.Q < 0.9: 
-#         Phase = 'liquid or two-phase'
-#     else:
-#         if Mach(fluid, w) > 1/(fluid.gamma):
-#             raise ChokedFlow(' Reduce hydraulic resistance or mass flow.')
-
-#     # Check Flow conditions
-#     if Re_ < 0.001 or Re_ > 5e7: 
-#         raise ValueError(f'Reynolds number (Re) must be between 0.001 and 5E7. The value is {Re_}')
-#     if eps < 0 or eps > 0.05:
-#         raise ValueError(f'Relative roughness (eps) should be between 0 and 0.05. The value is {eps}')
-
-#     if Re_ > 3000:  # Turbulent flow
-#         Nu_T, f = turbulent_flow_properties(Re_, Pr, L_ID, eps)
-#         Nu_Q = Nu_T
-        
-#     elif Re_ < 2300:  # Laminar flow
-#         Nu_T, Nu_Q, f = laminar_flow_properties(Re_, Pr, L_ID)
-        
-#     else:  # Transitional flow (Re between 2300 and 3000)
-#         Nu_T_turbulent, f_turbulent = turbulent_flow_properties(3000, Pr, L_ID, eps)
-#         Nu_lam_T, Nu_lam_Q, f_lam = laminar_flow_properties(2300, Pr, L_ID)
-        
-#         # Interpolate between laminar and turbulent values
-#         alpha = (Re_ - 2300) / (3000 - 2300)
-#         Nu_T = Nu_lam_T + alpha * (Nu_T_turbulent - Nu_lam_T)
-#         Nu_Q = Nu_lam_Q + alpha * (Nu_T_turbulent - Nu_lam_Q)
-#         f = f_lam + alpha * (f_turbulent - f_lam)
-     
-#     # Calculate pressure drop
-#     dP = dP_Darcy(f*L_ID, fluid.Dmass, w)    
-    
-#     # Calculate heat transfer coefficient: temperature and heat flux constant 
-#     h_T = heat_trans_coef(fluid, Nu_T, pipe.ID)
-#     h_Q = heat_trans_coef(fluid, Nu_Q, pipe.ID)
-#     #print(h_Q)
-    
-#     return dP.to(ureg.pascal), h_T, h_Q
-
-
-def find_Twall(x, T_avg, pipe, h_coeff, m_dot, condition): #add parameter condition
+def wall_temperature(x, T_avg, pipe, h_coeff, m_dot, condition): 
   
     """
     Description
@@ -370,7 +306,7 @@ def find_Twall(x, T_avg, pipe, h_coeff, m_dot, condition): #add parameter condit
     return (Q_conv - Q_cond).m_as(ureg.W) ** 2  
 
 
-def defined_q(fluid, pipe, m_dot, dP, h_Q):
+def wall_temps_constant_heat_flux(fluid, pipe, m_dot, dP, h_Q):
     """
     Description
     ----------    
@@ -426,13 +362,13 @@ def defined_q(fluid, pipe, m_dot, dP, h_Q):
         
         # Calculate Tw_o: minimum of the quadratic find_Twall
         condition = 1 # condition to designate Q_def in find_Twall
-        Tw_o = root_scalar(find_Twall, x0 = (Tw_i + dT/2).m_as(ureg.K), x1 = (Tw_i + dT).m_as(ureg.K), args=(T_avg, pipe, h_Q, m_dot, condition)).root * ureg.K
+        Tw_o = root_scalar(wall_temperature, x0 = (Tw_i + dT/2).m_as(ureg.K), x1 = (Tw_i + dT).m_as(ureg.K), args=(T_avg, pipe, h_Q, m_dot, condition)).root * ureg.K
 
     return Tw_i, Tw_o  
  
 
 # Define main functions
-def defined_Twall(fluid, pipe, m_dot, dP, h_T):
+def heated_properties_constant_wall_temp(fluid, pipe, m_dot, dP, h_T):
     """
     Description
     ----------    
@@ -496,7 +432,7 @@ def defined_Twall(fluid, pipe, m_dot, dP, h_T):
         # Calculate Tw_i:  minimum of the quadratic find_Twall
         condition = 2 # condition to designate Tw_def in find_Twall
 
-        Tw_i = minimize(find_Twall,  x0 = T_avg.m_as(ureg.K), args = (T_avg, pipe, h_T, m_dot, condition), bounds=[bracket]).x[0] *ureg.K        
+        Tw_i = minimize(wall_temperature,  x0 = T_avg.m_as(ureg.K), args = (T_avg, pipe, h_T, m_dot, condition), bounds=[bracket]).x[0] *ureg.K        
         
         ### Calculate downstream fluid conditions
         dT = T_avg - Tw_i
@@ -527,7 +463,7 @@ def defined_Twall(fluid, pipe, m_dot, dP, h_T):
     return Tw_i, Tw_o, Q
 
 
-def defined_h_external(fluid, pipe, m_dot, dP, h_T): 
+def heated_properties_constant_surface_heat_trans_coef(fluid, pipe, m_dot, dP, h_T): 
     """
     Description
     ----------    
@@ -603,7 +539,7 @@ def defined_h_external(fluid, pipe, m_dot, dP, h_T):
         
         #Calculate Tw_o: minimum of the quadratic find_Tw_o
         condition = 3
-        Tw_o = minimize(find_Twall, x0=(fluid_external.T + T_avg).m_as(ureg.K)/ 2, args = (T_avg, pipe, h_T, m_dot, condition), bounds=bracket).x[0] * ureg.K                                                  
+        Tw_o = minimize(wall_temperature, x0=(fluid_external.T + T_avg).m_as(ureg.K)/ 2, args = (T_avg, pipe, h_T, m_dot, condition), bounds=bracket).x[0] * ureg.K                                                  
         
        
         # Caclulate external heat transfer coefficient for system: calculates h_ext for system with h_type defined otherwise uses defined h_ext
@@ -704,7 +640,7 @@ def defined_insulation(fluid, pipe, m_dot, dP, h_T):
          
         ###Calculate Tw_i and Tw_o: minimum of the quadratic find_Twall
         condition = 4 # communicate the heat transfer condition: defined_insulation
-        Tw_o = minimize(find_Twall, x0=pipe.isolation.T_ext.m_as(ureg.K) - (pipe.isolation.T_ext.m_as(ureg.K) - T_avg.m_as(ureg.K)), args = (T_avg, pipe, h_T, m_dot, condition), bounds=bracket).x[0] * ureg.K 
+        Tw_o = minimize(wall_temperature, x0=pipe.isolation.T_ext.m_as(ureg.K) - (pipe.isolation.T_ext.m_as(ureg.K) - T_avg.m_as(ureg.K)), args = (T_avg, pipe, h_T, m_dot, condition), bounds=bracket).x[0] * ureg.K 
         Tw_i = (( pipe.isolation.k * (pipe.isolation.T_ext - Tw_o) / h_T / pipe.ID / log(pipe.isolation.OD/pipe.OD) ) + T_avg)
         
         ###Calculate downstream flow conditions
@@ -739,7 +675,7 @@ def pipe_heat(pipe, fluid, m_dot):
     ### Calculate pressure drop and heat transfer coefficient
     #dP, h_T, h_Q = dP_Pipe(m_dot, fluid, pipe)  
     dP = dP_dyn(m_dot, fluid, pipe)
-    h_T, h_Q = h_(m_dot, fluid, pipe)
+    h_T, h_Q = heat_trans_coef_surface(m_dot, fluid, pipe)
     
     ###heat flux defined on the wall of the pipe
     if hasattr(pipe, 'Q_def') and pipe.Q_def != None :
@@ -747,7 +683,7 @@ def pipe_heat(pipe, fluid, m_dot):
             pipe.Q_def.m_as(ureg.W / ureg.m ** 2)
         except:
             raise ValueError(f"the Q_def is not properly defined in component {pipe}" )
-        Tw_i, Tw_o = defined_q(fluid, pipe, m_dot, dP, h_Q)
+        Tw_i, Tw_o = wall_temps_constant_heat_flux(fluid, pipe, m_dot, dP, h_Q)
         Q = pipe.Q_def
         
     ###Temperature defined on the wall of the pipe
@@ -756,7 +692,7 @@ def pipe_heat(pipe, fluid, m_dot):
             pipe.Tw_def.m_as(ureg.K)
         except:
             raise ValueError(f"the Tw_def is not properly defined in component {pipe}" )
-        Tw_i, Tw_o, Q = defined_Twall(fluid, pipe, m_dot, dP, h_Q)
+        Tw_i, Tw_o, Q = heated_properties_constant_wall_temp(fluid, pipe, m_dot, dP, h_Q)
 
     ### Heat transfer or ambient/external temperature defined on the wall of the pipe
     elif (hasattr(pipe, 'h_ext') and pipe.h_ext is not None) or (hasattr(pipe, 'considerations') and pipe.considerations is not None):
@@ -791,7 +727,7 @@ def pipe_heat(pipe, fluid, m_dot):
                 except:
                     pipe.safety_fact = 1
         
-        Tw_i, Tw_o, Q = defined_h_external(fluid, pipe, m_dot, dP, h_T)  #Here- add h_ext 
+        Tw_i, Tw_o, Q = heated_properties_constant_surface_heat_trans_coef(fluid, pipe, m_dot, dP, h_T)  #Here- add h_ext 
 
     ###Isolation on the external of the pipe 
     elif hasattr(pipe, 'isolation') and pipe.isolation != None :
@@ -805,7 +741,7 @@ def pipe_heat(pipe, fluid, m_dot):
     ###Other
     else: 
         pipe.Q_def = Q = 0 * ureg.W/ ureg.m ** 2
-        Tw_i, Tw_o = defined_q(fluid, pipe, m_dot, dP, h_Q)
+        Tw_i, Tw_o = wall_temps_constant_heat_flux(fluid, pipe, m_dot, dP, h_Q)
     
     return Tw_i.to(ureg.K), Tw_o.to(ureg.K), dP.to(ureg.bar), Q.to(ureg.W/ ureg.m ** 2) #, h_ext.to(ureg.W/ureg.m**2/ureg.K) # Here
         
