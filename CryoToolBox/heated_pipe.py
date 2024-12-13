@@ -37,76 +37,13 @@ class pipe_properties:
     def __init__(self, k, OD, T_ext=293 * ureg.K):
         self.k = k
         self.OD = OD
-        self.T_ext = T_ext
-      
-# def laminar_flow_properties(Re_, Pr_, L_ID):
-#     """
-#     Non dimentional calculation of the Nusselt and fiction factor in pipe in laminar flow  
-#     Section 5.2.4 of Nellis and Klein (2020)
-#     """
-#     # Verify the input conditions     
-#     if Pr_ < 0.1:
-#         raise ValueError(f'Prandtl number (Pr) must be > 0.1. The value is {Pr}')
-        
-#     # Calculate and verify Graetz number and Inverse Graetz number
-#     SGZ = L_ID / Re_
-#     GZ = L_ID / (Re_ * Pr_)
-#     if GZ < 1e-6:
-#         raise ValueError(f'Inverse Graetz number (GZ) must be > 1e-6. The value is {GZ}')
-         
-#     # Calculate friction factor
-#     f = 4 * (3.44 / sqrt(SGZ) + (1.25 / (4 * SGZ) + 16 - 3.44 / sqrt(SGZ)) / (1 + 0.00021 * SGZ**(-2))) / Re_
-    
-#     # Calculate Nusselt numbers: temperature constant and flux constant conditions
-#     Nu_T = ((5.001 / GZ**1.119 + 136.0)**0.2978 - 0.6628) / tanh(2.444 * SGZ**(1 / 6) * (1 + 0.565 * SGZ**(1 / 3)))
-#     Nu_Q = ((6.562 / GZ**1.137 + 220.4)**0.2932 - 0.5003) / tanh(2.530 * SGZ**(1 / 6) * (1 + 0.639 * SGZ**(1 / 3)))
-    
-#     return Nu_T, Nu_Q, f
+        self.T_ext = T_ext     
 
-# def turbulent_flow_properties(Re_, Pr_, L_ID, eps):
-#     """
-#     Non dimentional calculations of the Nusselt and fiction factor in pipe in turbulent flow following Section 5.2.3 of Nellis and Klein (2020)
-#     """
-    
-#     # Verify input conditions
-#     if Pr_ < 0.004 or Pr_ > 2000:
-#         raise ValueError(f'Prandtl number (Pr) must be between 0.004 and 2000. The value is {Pr}')
-#     if L_ID <= 1:  
-#         if L_ID < 0:  ###not inferior to zero - make no sense
-#             raise ValueError('L/ID ratio < 0. Not possible')
-#         print('L/ID ratio should be > 1. The value is {L_ID}')
-#         L_ID = 1
-        
-#     # Calculate friction Factor 
-#     if eps > 1e-5:
-#         #Offor & Alabi, Advances in Chemical Engineering and Science, 2016
-#         friction = (-2 * log10(eps / 3.71 - 1.975 / Re_ * log((eps / 3.93)**1.092 + 7.627 / (Re_ + 395.9))))**(-2)
-#     else:
-#         #Li & Seem correlation, A New Explicity Equation for Accurate Friction Factor Calculation for Smooth Tubes, 2011
-#         friction = (-0.001570232 / log(Re_) + 0.394203137 / log(Re_)**2 + 2.534153311 / log(Re_)**3) * 4
-        
-#     # Nusselt, Gnielinski, Int. Chem. Eng., 1976
-#     Nusselt = ((friction / 8) * (Re_ - 1000) * Pr_) / (1 + 12.7 * sqrt(friction / 8) * (Pr_**(2 / 3) - 1))
-    
-#     # Correct Nusselt number for low Prandtl numbers, Notter & Sleicher, Chem. Eng. Sci., 1972
-#     if Pr_ < 0.5:
-#         Nusselt_lp = 4.8 + 0.0156 * Re_ ** 0.85 * Pr_ ** 0.93
-#         if Pr_ < 0.1:
-#             Nusselt = Nusselt_lp
-#         else:
-#             Nusselt = Nusselt_lp + (Pr_ - 0.1) * (Nusselt - Nusselt_lp) / 0.4   
-            
-#     # Apply developing flow correction for friction factor and Nusselt 
-#     f = friction * (1 + (1 / L_ID)**0.7)
-#     Nu = Nusselt * (1 + (1 / L_ID)**0.7)
-    
-#     return Nu, f
- 
 ### Seperate friction factor and Nusselt calculations:
 def Nusselt_laminar(Re_, Pr_, L_ID):
     """
     Non dimentional calculation of the Nusselt in pipe in laminar flow  
-    Section 5.2.4 of Nellis and Klein (2020)
+    Bennet, T.D., Journal of Heat Transfer, 2020
     """
     # Verify input conditions     
     if Pr_ < 0.1:
@@ -817,21 +754,18 @@ def heat_trans_coef_external_surface(fluid, pipe, T_wall, considerations=None, h
         # Initialize heat transfer coefficient
         h = 0
 
-        if 'convection' in considerations: #Convection considered
+        if 'convection' in considerations: # sccounting for convection
             
             # Define film temperature to calculate fluid properties
             T_film = (fluid.T + T_wall )/ 2 
             fluid_film = fluid.copy() 
             fluid_film.update('P', fluid.P ,'T', T_film)
             
-            #Calculate Rayleigh and Prandtl numbers
-            # Ra_ = Ra(fluid, T_wall, pipe.OD)
-            # Pr_ = Pr(fluid)
-            
+            # calculate flow conditions
             Pr_ = Pr(fluid_film)
             Ra_ = Ra_update(fluid, T_wall, pipe.OD)
 
-            #Determine orientation of the pipe      
+            #Determine orientation of the pipe and calculate Nusselt number   
             try:
                 orientation = pipe.orientation
             except:
@@ -845,21 +779,23 @@ def heat_trans_coef_external_surface(fluid, pipe, T_wall, considerations=None, h
                 #Use maximum Nusselt if orientation is not defined
                 Nu_ = max (Nu_vcyl(Pr_, Ra_, pipe.OD, pipe.L), Nu_hcyl(Pr_, Ra_))
             
-            #Calculate heat transfer coefficient of external fluid
+            #Calculate heat transfer coefficient at the external surface of the pipe
             h_conv = heat_trans_coef(fluid_film, Nu_, pipe.OD)
+            
+            # For determining total heat transfer coefficient
             h = h_conv
 
-        if 'radiation' in considerations:  #radiation considered
+        if 'radiation' in considerations:  # accounting for radiation
             
             #Determine emissivity of material
             try:
                 epsilon = pipe.epsilon
             except:
-                # #Assume material is polished steel if not defined
-                # epsilon = 0.075 
+                # #Assume material is stainless steel
                 if T_wall < 274*ureg.K: 
                     epsilon = 0.35
                 else: 
+                    # emissivity of ice if pipe is below freezing 
                     epsilon = 0.96
             
             #Calculate radiation heat transfer coefficient
@@ -909,7 +845,7 @@ def heat_trans_coef_external_surface(fluid, pipe, T_wall, considerations=None, h
     return h.to(ureg.W / ureg.K / ureg.m ** 2)
 
 def heat_flux_MLI(N,Th, Tc, layer_density = 21, P_res = 0.01*ureg.torr, emissivity = 0.043): # add units | number of layers, temp outer (hot) layer, temp inner (cold) layer
-    "Assuming Perf DAM with glass. Emissivity value is for aluminum."
+    "Calculate the heat flux of a component with MLI installed. Assuming Perf DAM with glass. Emissivity value is for aluminum."
     
     # Constants
     Cr = 7.07e-10 # radiation coefficient (function of reflector's material - aluminum)
