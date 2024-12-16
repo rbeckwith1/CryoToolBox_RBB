@@ -485,7 +485,7 @@ def C_t_bar_cyl(Pr_):
 
 def Nu_hcyl(Pr_, Ra_):
     """Calculate Nusselt number for isothermal horizontal cylinder.
-    Only natural convection currently supported.
+    Only natural convection currently supported
     Based on Handbook of heat transfer by Rohsenow, Hartnet,
     Cho (HHT) (4.45d)
 

@@ -131,7 +131,7 @@ class Tube(PipingElement):
         """ureg.Quantity {length: 1}: Resistance coefficient.
         """
         eps_r = self.eps / self.ID
-        return f_Darcy(Re_, eps_r, self.L/self.ID, self.method)*self.L/self.ID
+        return friction_factor(Re_, eps_r, self.L/self.ID, self.method)*self.L/self.ID
 
     def f_T(self):
         """Calculate Darcy friction factor for complete turbulence for smooth
@@ -996,7 +996,7 @@ class ParallelPlateRelief:
 
 
 # Supporting functions used for flow rate and pressure drop calculations.
-def f_Darcy(Re_, eps_r, L_ID, method='churchill'):
+def friction_factor(Re_, eps_r, L_ID, method='churchill'):
     """Calculate Darcy friction factor using Churchill, Serghide, or Nellis and Klein
     solution to the Colebrook equation.
 
@@ -1040,7 +1040,7 @@ def churchill(Re_, eps_r):
     Returns
     -------
     float
-        Darcy friction coefficient
+        Friction coefficient
     """
     A1 = 0.883 * log(Re_)**1.282 / Re_**1.007
     A2 = 0.27 * eps_r
@@ -1344,6 +1344,7 @@ def dP_isot(m_dot, fluid, pipe, tol=1e-6):
     # Return the pressure difference    
     return P1 - P2 
 
+# in progress -
 def dP_dyn(m_dot, fluid, pipe):
     
     #Verify two phase flow or Liquid
@@ -1515,22 +1516,23 @@ def M_Klim(K, k):
 
 
 def M_complex(M, k):
+    """ Function to calculate term for ___ to make calculations convenient"""
     return 1 + M**2 * (k-1) / 2
 
 
-def P_from_M(P1, M1, M2, k):
+def static_pressure(P1, M1, M2, k):
     """Calculate static pressure from inlet static pressure and Mach numbers."""
     PM1 = P1 * M1 * M_complex(M1, k)**0.5
     P2 = PM1 / (M2*M_complex(M2, k)**0.5)
     return P2
 
 
-def P_total(P, M, k):
+def total_pressure(P, M, k):
     """Calculate total pressure from static pressure."""
-    return P * M_complex(M, k)**(k/(k-1))
+    return P * M_complex(M, k)**(k/(k-1)) 
 
 
-def P_crit(P, M, k):
+def critical_pressure(P, M, k):
     """Calculate critical(sonic) pressure for the given static pressure and Ma."""
     M_crit_comp = (k+1) / (2+(k-1)*M**2)
     P_c = P * M / M_crit_comp**0.5
@@ -1551,8 +1553,8 @@ def dP_adiab(m_dot, fluid, pipe):
                          f'K={float(K_pipe):.3g}. Reduce hydraulic resistance or'
                          ' mass flow.')
     M_end = M_Klim(K_left, fluid.gamma)
-    P_static_end = P_from_M(fluid.P, M, M_end, fluid.gamma)
-    P_total_end = P_total(P_static_end, M, fluid.gamma)
+    P_static_end = static_pressure(fluid.P, M, M_end, fluid.gamma)
+    P_total_end = total_pressure(P_static_end, M, fluid.gamma)
     return fluid.P - P_total_end
 
 
@@ -1571,8 +1573,8 @@ def new_dP_adiab(m_dot, fluid, pipe):
                          ' mass flow.')
     M_end = M_Klim(K_left, fluid.gamma)
     P_static_in = fluid.P / M_complex(M, fluid.gamma)
-    P_static_end = P_from_M(P_static_in, M, M_end, fluid.gamma)
-    P_total_end = P_total(P_static_end, M, fluid.gamma)
+    P_static_end = static_pressure(P_static_in, M, M_end, fluid.gamma)
+    P_total_end = total_pressure(P_static_end, M, fluid.gamma)
     return fluid.P - P_total_end
 
 
@@ -1607,14 +1609,14 @@ def m_dot_adiab(fluid, pipe, P_out=P_NTP, state='total'):
         elif state == 'static':
             v = velocity(fluid, m_dot, pipe.area)
             M1 = Mach(fluid, v)
-        P_crit1_ = P_crit(P1, M1, k).m_as(ureg.Pa)
+        P_crit1_ = critical_pressure(P1, M1, k).m_as(ureg.Pa)
         K_lim1 = K_lim(M1, k)
         Re_ = Re(fluid, m_dot, pipe.ID, pipe.area)
         K_lim2 = K_lim1 - pipe.K(Re_)
         if K_lim2 < 0:
             return -1
         M2 = M_Klim(K_lim2, k)
-        P_crit2_ = P_crit(P2, M2, k).m_as(ureg.Pa)
+        P_crit2_ = critical_pressure(P2, M2, k).m_as(ureg.Pa)
         result = P_crit1_ - P_crit2_
         return result
     bracket = [1e-10, 1e10]  # Limits search range
