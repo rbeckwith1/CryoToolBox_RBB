@@ -1101,7 +1101,7 @@ def nellis_turbulent(Re_, L_ID, eps_r):
 def nellis_laminar(Re_, L_ID, eps_r):
     """
     Non dimentional calculation of the fiction factor in pipe in laminar flow  
-    Section 5.2.4 of Nellis and Klein (2020)
+    Section 5.2.3 of Nellis and Klein (2020)
     """
     # Calculate Graetz number and Inverse Graetz number verification
     SGZ = L_ID / Re_
