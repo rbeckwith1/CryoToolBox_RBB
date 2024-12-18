@@ -787,16 +787,17 @@ def heat_trans_coef_external_surface(fluid, pipe, T_wall, considerations=None, h
 
         if 'radiation' in considerations:  # accounting for radiation
             
-            #Determine emissivity of material
-            try:
-                epsilon = pipe.epsilon
-            except:
-                # #Assume material is stainless steel
-                if T_wall < 274*ureg.K: 
+          
+            # #Assume material is stainless steel
+            if T_wall < 274*ureg.K: 
+                #Determine emissivity of material
+                try:
+                    epsilon = pipe.epsilon
+                except:
                     epsilon = 0.35
-                else: 
-                    # emissivity of ice if pipe is below freezing 
-                    epsilon = 0.96
+            else: 
+                # emissivity of ice if pipe is below freezing 
+                epsilon = 0.96
             
             #Calculate radiation heat transfer coefficient
             sigma = 5.670373e-8 * ureg.W/ureg.m ** 2 / ureg.K ** 4
