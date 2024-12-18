@@ -852,13 +852,13 @@ def heat_trans_coef_external_surface(fluid, pipe, T_wall, considerations=None, h
             lewis_rel = Le_**(-2/3)/(fluid_film.Dmass*fluid_film.Cpmass) 
             
             # use reference function to interpolate enthalpy and density values from REFPROP
-            surface_concen = interp_density(T_wall)
-            air_vapor_concen = interp_density(fluid.T)*humidity
+            surface_concen = interp_density(T_wall.m_as(ureg.K))
+            air_vapor_concen = interp_density(fluid.T.m_as(ureg.K))*humidity
             concentration_grad = air_vapor_concen - surface_concen
             
             
-            surface_enthalpy = interp_enthalpy(T_wall)
-            vapor_enthalpy = interp_enthalpy(fluid.T)
+            surface_enthalpy = interp_enthalpy(T_wall.m_as(ureg.K))
+            vapor_enthalpy = interp_enthalpy(fluid.T.m_as(ureg.K))
             delta_H = vapor_enthalpy - surface_enthalpy 
             
             # Standard heat transfer equations to calculate heat flux and coefficient 
