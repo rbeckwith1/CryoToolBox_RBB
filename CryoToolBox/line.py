@@ -104,24 +104,24 @@ class Line:
             H = fluid_temp.Hmass  #enthalpy of the fluid
             if i > 0 and comp.ID > D:
                 enl = piping.Enlargement(D, comp.ID)
-                dP = piping.dP_isot(mFlow_in, fluid_temp, enl)
+                dP = piping.dP_incomp(mFlow_in, fluid_temp, enl)
                 fluid_temp.update('P', fluid_temp.P - dP,'Hmass', H)
             if i > 0 and comp.ID < D:
                 con = piping.Contraction(D, comp.ID)
-                dP = piping.dP_isot(mFlow_in, fluid_temp, con)
+                dP = piping.dP_incomp(mFlow_in, fluid_temp, con)
                 fluid_temp.update('P', fluid_temp.P - dP,'Hmass', H)
             if 'Xt' in comp.__dict__ and comp.Xt != 0:
                 dP = piping.dP_control_valve(mFlow_in, fluid_temp, comp)
                 dH = 0*ureg.J/ureg.kg
             else:
                 try:
-                    Tw_i, Tw_o, dP, Q = heated_pipe.pipe_heat(comp, fluid_temp, mFlow_in) #change to dP, and dH
+                    Tw_i, Tw_o, dP, Q = heated_pipe.heated_properties(comp, fluid_temp, mFlow_in) #change to dP, and dH
                     self.Tw_i_comp[i] = Tw_i.m_as(ureg.K) * ureg.K
                     self.Tw_o_comp[i] = Tw_o.m_as(ureg.K) * ureg.K
                     self.Q_out_comp[i] = Q.m_as(ureg.W/ureg.m**2) * ureg.W/ureg.m**2       #to modify
                     dH = Q * comp.ID * comp.L * pi / mFlow_in
                 except:
-                    dP = piping.dP_isot(mFlow_in, fluid_temp, comp)
+                    dP = piping.dP_incomp(mFlow_in, fluid_temp, comp)
                     dH = 0*ureg.J/ureg.kg
             fluid_temp.update('P', fluid_temp.P - dP,'Hmass', H + dH.to(ureg.J/ureg.kg))
             self.P_out_comp[i] = fluid_temp.P

@@ -18,7 +18,7 @@ from scipy.optimize import root_scalar, minimize
 from .functions import AIR
 from .functions import heat_trans_coef, Ra, Nu_vcyl, Nu_hcyl, Pr
 from .cp_wrapper import ThermState
-from .piping import Mach, Mach_total, K_lim, ChokedFlow, HydraulicError, velocity, dP_Darcy, dP_adiab, Pipe, Tube, CopperTube, dP_dyn
+from .piping import Mach, Mach_total, K_lim, ChokedFlow, HydraulicError, velocity, dP_Darcy, dP_adiab, Pipe, Tube, CopperTube, dP_incomp
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
@@ -639,7 +639,7 @@ def heated_properties(pipe, fluid, m_dot):
     """
     ### Calculate pressure drop and heat transfer coefficient
     #dP, h_T, h_Q = dP_Pipe(m_dot, fluid, pipe)  
-    dP = dP_dyn(m_dot, fluid, pipe)
+    dP = dP_incomp(m_dot, fluid, pipe) ###to modify later
     h_T, h_Q = heat_trans_coef_internal_surface(m_dot, fluid, pipe)
     
     ###heat flux defined on the wall of the pipe
