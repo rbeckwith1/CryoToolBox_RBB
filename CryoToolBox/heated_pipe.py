@@ -24,8 +24,14 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 import pandas as pd
 
+
+from . import os, __location__
+
+water_ice_table_name = 'Water_ice_data.txt'
+
+
 # Import data for icing calculations: located in text file refprop_data.txt
-refprop_data = pd.read_csv(r'refprop_data.txt', sep ='\s+', engine = 'python')
+refprop_data = pd.read_csv(os.path.join(__location__, water_ice_table_name), sep ='\s+', engine = 'python')
 rp_temp = refprop_data['Temperature']
 rp_density = refprop_data['Density']
 rp_enthalpy = refprop_data['Enthalpy']
