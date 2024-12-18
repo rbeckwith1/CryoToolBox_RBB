@@ -25,7 +25,7 @@ from scipy.interpolate import interp1d
 import pandas as pd
 
 # Import data for icing calculations: located in text file refprop_data.txt
-refprop_data = pd.read_csv(r'C:\Users\rbeckwit\Documents\Python Scripts\Heated_pipe\Heated_pipe_part2\refprop_data.txt', sep ='\s+', engine = 'python')
+refprop_data = pd.read_csv(r'refprop_data.txt', sep ='\s+', engine = 'python')
 rp_temp = refprop_data['Temperature']
 rp_density = refprop_data['Density']
 rp_enthalpy = refprop_data['Enthalpy']
