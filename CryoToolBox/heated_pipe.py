@@ -155,22 +155,29 @@ def wall_temperature(x, T_avg, pipe, h_coeff, m_dot, condition):
     Description
     ---------- 
     This function is used to find the wall temperature of a pipe. 
-    The system can either have a defined applied heat flux (`pipe_Q_def`), pipe outer wall temperature (`pipe_Tw_def`), 
-    external fluid heat transfer coefficient (`pipe_h_ext`), or pipe insulation (`pipe_insulated`).  
-    <div style="text-align: center;">
-        <img src="find_Tw.jpg" alt="find_Tw" width="600" />
-    </div> 
+    The system can either have a defined applied:
+    - Heat flux (`pipe_Q_def`), 
+    - Pipe outer wall temperature (`pipe_Tw_def`), 
+    - External fluid heat transfer coefficient (`pipe_h_ext`),
+    - Pipe insulation (`pipe_insulated`).  
+    <div style="text-align: center; margin: 0; padding: 0;">
+        <figure style="text-align: center; margin: 0; padding: 0;">
+            <img src="find_Tw.jpg" alt="find_Tw" style="max-width: 100%; height: auto; margin: 0 auto; display: block;" />
+            <figcaption style="text-align: center; font-style: italic; margin-top: 10px;">Figure 1: </figcaption>
+            <br>
+        </figure>
+    </div>   
     Depending on the inputs, either the inner or outer wall temperature is calculated. The heat flux, $q"$ is calculated 
     from the general convection equation as a function of the unknown wall temperature shown below in Equation #. Here $h$ is the heat transfer
     coefficient, $T_{avg}$ is the average fluid temperature, and $Tw_i$ and $Tw_o$ are the inner and outer wall temperatures respectively.      
-    $$ q"_{conv} = h * (Tw_i – T_{avg}) $$ 
+    $$ q"_{conv} = h * (Tw_i – T_{avg})  \qquad   {(1)} $$ 
     Similarly, the heat flux is also calculated as a function of the unknown wall temperature from the conduction equation.  
-    $$ q"_{cond} = (Tw_o – Tw_i)/ R_L $$ 
-    $ R_L $ is the thermal resistance of the wall defined below in Equation # where $k$ is the thermal resistance of the wall, $L$ is the length of the pipe, 
+    $$ q"_{cond} = (Tw_o – Tw_i)/ R_L \qquad {(2)} $$ 
+    $ R_L $ is the thermal resistance of the wall defined below in Equation # where $k$ is the thermal conductivity of the wall (calculated using the integral method), $L$ is the length of the pipe, 
     and $D_o$ and $D_i$ are the outer and inner diameters of the pipe respectively. 
-    $$ R_L = log(D_o/D_i) / (2 * pi * L * k) $$ 
+    $$ R_L = log(D_o/D_i) / (2 * pi * L * k) \qquad {(3)} $$ 
     These two expressions for heat flux are set equal to each other and squared to create a quadratic.     
-    $$ (q"_{conv} - q"_{cond})^2 = 0 $$ 
+    $$ (q"_{conv} - q"_{cond})^2 = 0 \qquad {(4)} $$ 
     The minimize function is used to find the solution of the quadratic: the unknown wall temperature.   
     Parameters
     ----------
