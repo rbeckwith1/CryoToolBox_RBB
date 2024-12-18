@@ -845,6 +845,8 @@ def heat_trans_coef_external_surface(fluid, pipe, T_wall, considerations=None, h
             
             #Calculate Fluid Properties using the Film Temp 
             vis = 0.00001716 *((T_film.m_as(ureg.K)/273.15)**(3/2))*((273.15+110.4)/(T_film.m_as(ureg.K)+110.4)) *(ureg.kg/ureg.s/ureg.m) ### Sutherland's Formula to calculate viscosity of air
+            print(vis)
+            print(fluid_film.viscosity.to(ureg.kg/ureg.s/ureg.m)) #why not using this value?
             Sc_ = vis /(mass_transport * fluid_film.Dmass) # Schmidt number
             
             # Lewis number and Lewis relationship correlating mass and heat transfer properties
@@ -866,8 +868,12 @@ def heat_trans_coef_external_surface(fluid, pipe, T_wall, considerations=None, h
             q_icing = mass_flux*delta_H
             h_icing = q_icing/(fluid.T-T_wall)
             
+            print(T_wall)
+            print(h_conv)
+            print(h_icing.to(ureg.W/ureg.K/ureg.m**2))
+            
             # Calculate total heat transfer coefficient
-            h = h + h_icing
+            h = h + h_icing #icing is added to the other method, in this case it should be only valid if below 0
 
         if h == 0:
             raise ValueError("The calculated heat transfer coefficient is zero, indicating invalid or missing considerations.")
