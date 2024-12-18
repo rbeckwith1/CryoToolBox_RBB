@@ -254,17 +254,21 @@ def wall_temps_constant_heat_flux(fluid, pipe, m_dot, dP, h_Q):
     Description
     ----------    
     This function is used for systems with a defined constant heat flux. The set-up of the function is displayed below in Figure #. 
-    <div style="text-align: center;">
-        <img src="pipe_Q_def.jpg" alt="pipe_Q_def" width="550" />  
-    </div>     
+    <div style="text-align: center; margin: 0; padding: 0;">
+        <figure style="text-align: center; margin: 0; padding: 0;">        
+            <img src="pipe_Q_def.jpg" alt="pipe_Q_def" style="max-width: 100%; height: auto; margin: 0 auto; display: block;" />
+            <figcaption style="text-align: center; font-style: italic; margin-top: 10px;">Figure 2: </figcaption>
+            <br>
+        </figure>
+    </div>       
     The heat flux is used to calculate the fluid’s change of enthalpy. This is displayed in Equation # shown below where $dH$ is the 
-    change in enthalpy, $q"$ is the defined heat flux, $S_i$ is the pipe's inner surface area, and $m_{dot}$ is the mass flow rate.  
-    $$ dH = q" * S_i/m_{dot} $$
+    change in enthalpy, $q"$ is the defined heat flux, $S_o$ is the pipe's outer surface area, and $m_{dot}$ is the mass flow rate.  
+    $$ dH = q" * S_o/m_{dot} \qquad {(5)} $$
     Using the enthalpy change and the input pressure drop value, the fluid conditions at the outlet are calculated. 
     The average temperature of the fluid is determined from the inlet and outlet temperatures and assumes a linear temperature gradient.   
     This average temperature is used to calculate the inner wall temperature using the general convection equation shown below in Equation #. 
-    $$ Tw_i = Q/(h_Q * S_i) + T_{avg}  $$
-    In the above expression, $Q$ is the heat load, $h_Q$ is the heat transfer coefficient calculated considering a constant heat flux, 
+    $$ Tw_i = q"/(h_Q * S_i / S_o) + T_{avg}  \qquad {(6)} $$
+    In the above expression, $S_i$ is the pipe's inner surface area, $h_Q$ is the heat transfer coefficient calculated using function `heat_trans_coef_internal_surface` (constant heat flux), 
     and $T_{avg}$ is the avaerage temperatue of the fluid. Finally, the outer wall temperature is calculated using function `wall_temperature`.
     Parameters
     ----------
@@ -316,19 +320,23 @@ def heated_properties_constant_wall_temp(fluid, pipe, m_dot, dP, h_T):
     Description
     ----------    
     This function is used for systems with a constant pipe outer wall temperature. 
-    The set-up is shown below in Figure # with the inputs highlighted. 
-    <div style="text-align: center;">
-        <img src="pipe_Tw_def.jpg" alt="pipe_Tw_def" width="600" />   
-    </div>         
+    The set-up is shown below in Figure # with the inputs highlighted.  
+    <div style="text-align: center; margin: 0; padding: 0;">
+        <figure style="text-align: center; margin: 0; padding: 0;">
+            <img src="pipe_Tw_def.jpg" alt="pipe_Tw_def" style="max-width: 100%; height: auto; margin: 0 auto; display: block;" />
+            <figcaption style="text-align: center; font-style: italic; margin-top: 10px;">Figure 3: </figcaption>
+            <br>
+        </figure>
+    </div>           
     The inner wall temperature is calculated in `find_Twall` from the average temperature which is initially assigned to a reference value.
     The inner wall temperature is used in Equation # described in `pipe_Q_def` to calculate the change in enthalpy of the fluid.
     The outlet pressure is calculated in `dP_Pipe`. Additionally, the outlet pressure is calculated in `dP_pipe`. 
     Knowing these fluid conditions, the outlet temperature of the fluid is determined.
     The average temperature is then re-calculated from the inlet and outlet fluid temperatures using Equation #.  
-    $$ T_{avg} = (T_{inlet} + T_{outlet})/2 $$
-    This value replaces the reference value, and the code loops until the reference temperature and the the calculated average temperature converge.
+    $$ T_{avg} = (T_{inlet} + T_{outlet})/2 \qquad {(7)} $$
+    This value replaces the reference value, and the code loops until the reference temperature and the calculated average temperature converge.
     Once $T_{avg}$ is known, the heat flux is calculated from the general convection equation shown below in Equation # where $h_T$ is the heat transfer coefficient calculated in `dP_Pipe`. 
-    $$q” = -h_T * (T_{avg}-Tw_i) $$ 
+    $$q” = -h_T * (T_{avg}-Tw_i) \qquad {(8)} $$ 
     Parameters
     ----------
     `dH` : Quantity {length: 2, time: -2}
@@ -413,18 +421,22 @@ def heated_properties_constant_surface_heat_trans_coef(fluid, pipe, m_dot, dP, h
     This function is used for systems with defined external conditions. Either the heat transfer coefficient of the external fluid can be defined, or 
     methods of heat transfer to be considered can be specified. This is computed and explained in `heated_pipe`.    
     The set-up for this function is displayed below in Figure # with the input variables highlighted. 
-    <div style="text-align: center;">
-        <img src="pipe_h_ext.jpg" alt="pipe_h_ext" width="600" />  
-    </div>     
+    <div style="text-align: center; margin: 0; padding: 0;">
+        <figure style="text-align: center; margin: 0; padding: 0;">
+            <img src="pipe_h_ext.jpg" alt="pipe_h_ext" style="max-width: 100%; height: auto; margin: 0 auto; display: block;" />
+            <figcaption style="text-align: center; font-style: italic; margin-top: 10px;">Figure 4: </figcaption>
+            <br>
+        </figure>
+    </div>    
     The outer wall temperature, $Tw_o$, is calculated in `find_Twall` from the average temperature, $T_{avg}$, which is initially assigned to a reference value.
     The expression for the heat flux due to convection of the external fluid and the outer wall is defined below in Equation # where $h_{ext}$ is the external 
     heat transfer coefficient, $D_o$ is the outer diameter, $D_i$ is the inner diameter, and $T_{ext}$ is the external fluid temperature. 
     The external fluid heat transfer coefficient is determined in the function `h_ext_`.
-    $$ q" = (T_{ext}-Tw_o) * h_{ext} * S_o $$
+    $$ q" = (T_{ext}-Tw_o) * h_{ext} * S_o \qquad {(9)} $$
     The heat flux can also be calculated from the convection between the internal fluid and the inner wall defined below in Equation #. 
-    $$ q" = (Tw_i - T_{avg}) * h_T * S_i $$
-    Combining and similifying these equations, an expression for the inner wall temperature, Equation #, is found.  
-    $$Tw_i = [h_{ext} * D_o * (T_{ext} - Tw_o) / (h_T * D_i)] + T_{avg}$$
+    $$ q" = (Tw_i - T_{avg}) * h_T * S_i \qquad {(10)} $$
+    Combining and simplifying these equations, an expression for the inner wall temperature, Equation #, is found.  
+    $$Tw_i = [h_{ext} * D_o * (T_{ext} - Tw_o) / (h_T * D_i)] + T_{avg} \qquad {(11)} $$
     The inner wall temperature is calculated and used in Equation # described in `pipe_Q_def` to calculate the change in enthalpy of the fluid.
     Additionally, the outlet pressure is calculated in `dP_Pipe`. 
     Knowing these fluid conditions, the outlet temperature of the fluid is determined. The average temperature is then re-calculated from the inlet and outlet fluid 
@@ -523,17 +535,21 @@ def heated_properties_insulated(fluid, pipe, m_dot, dP, h_T):
     This function is used for piping systems with insulation. The insulation must have a defined thermal conductivity and outer diameter. 
     The external temperature of the insulation is assumed to be $293K$ if not specifically defined.   
     The set-up of the function is shown below in Figure # where the variable inputs to the function are highlighted.
-    <div style="text-align: center;">
-        <img src="pipe_insulated.jpg" alt="pipe_insulated" width="600" />
+    <div style="text-align: center; margin: 0; padding: 0;">
+        <figure style="text-align: center; margin: 0; padding: 0;">
+            <img src="pipe_insulated.jpg" alt="pipe_insulated" style="max-width: 100%; height: auto; margin: 0 auto; display: block;" />
+            <figcaption style="text-align: center; font-style: italic; margin-top: 10px;">Figure 5: </figcaption>
+            <br>
+        </figure>
     </div>
     The outer wall temperature, $Tw_o$, is calculated in `find_Twall` from the average temperature, $T_{avg}$ , which is initially assigned to a reference value.
     The expression for the heat flux due to convection of the internal fluid and the inner wall is defined below in Equation # where $h_{ext}$ is the external 
     heat transfer coefficient, $D_o$ is the outer diameter, $ D_i $ is the inner diameter, and $T_{ext}$ is the external fluid temperature.
-    $$ q" = (Tw_i - T_{avg}) * h_T * S_i $$
+    $$ q" = (Tw_i - T_{avg}) * h_T * S_i \qquad {(12)} $$
     The heat flux can also be calculated from the conduction between the insulation with the outer wall of the pipe defined below in Equation # where $R_L$ is the thermal resistance of the wall. 
-    $$ q" = (T_{ext}-Tw_o) / R_L $$
+    $$ q" = (T_{ext}-Tw_o) / R_L \qquad {(13)} $$
     Combining and similifying these equations, an expression for the inner wall temperature, Equation #, is found.  
-    $$ Tw_i = ((k_{ins}* (T_{ext} - Tw_o) )/ (h_T * D_i * log(D_o/D_i)) +T_{avg} $$ 
+    $$ Tw_i = ((k_{ins}* (T_{ext} - Tw_o) )/ (h_T * D_i * log(D_o/D_i)) +T_{avg} \qquad {(14)} $$ 
     The inner wall temperature is calculated and used in Equation # described in `pipe_Q_def` to calculate the change in enthalpy of the fluid.
     Additionally, the outlet pressure is calculated in `dP_pipe`. 
     Knowing these fluid conditions, the outlet temperature of the fluid is determined. The average temperature is then re-calculated from the inlet and outlet fluid 
